@@ -12,10 +12,11 @@ import androidx.core.view.WindowInsetsCompat;
 import com.example.quizzapp.activities.DashboardActivity;
 import com.example.quizzapp.activities.LoginActivity;
 import com.example.quizzapp.models.User;
-import com.example.quizzapp.repository.QuizRepository;
+import com.example.quizzapp.repository.AuthRepository;
 
 public class MainActivity extends AppCompatActivity {
-private QuizRepository repository;
+
+    private AuthRepository authRepository;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -30,10 +31,10 @@ private QuizRepository repository;
 
 
         });
-     repository = new QuizRepository(this);
-        repository.getLoggedInUser(new QuizRepository.UserCallback() {
+        authRepository = new AuthRepository(this);
+        authRepository.getCurrentUser(new AuthRepository.UserCallback() {
             @Override
-            public void onSuccess(User user) {
+            public void onResult(User user) {
                 if (user != null) {
                     // User is logged in, navigate to dashboard
                     Intent intent = new Intent(MainActivity.this, DashboardActivity.class);
@@ -45,14 +46,6 @@ private QuizRepository repository;
                     startActivity(intent);
                     finish();
                 }
-            }
-
-            @Override
-            public void onError(String error) {
-                // No user logged in, navigate to login
-                Intent intent = new Intent(MainActivity.this, LoginActivity.class);
-                startActivity(intent);
-                finish();
             }
         });
 

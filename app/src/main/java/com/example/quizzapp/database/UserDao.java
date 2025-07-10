@@ -40,6 +40,9 @@ public interface UserDao {
     @Query("SELECT * FROM users WHERE isLoggedIn = 1 LIMIT 1")
     User getLoggedInUser();
 
+    @Query("SELECT * FROM users WHERE (username = :loginInput OR email = :loginInput) AND password = :password LIMIT 1")
+    User getUserByLoginCredentials(String loginInput, String password);
+
     @Query("SELECT * FROM users ORDER BY createdAt DESC")
     List<User> getAllUsers();
 

@@ -10,9 +10,8 @@ import com.example.quizzapp.models.User;
 import com.example.quizzapp.models.Quiz;
 @Database(
  entities ={User.class, Quiz.class},
-version = 1,
-exportSchema = true
-
+version = 2,
+exportSchema = false
 )
 public abstract class QuizDatabase  extends RoomDatabase {
 

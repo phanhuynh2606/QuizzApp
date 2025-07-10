@@ -13,14 +13,14 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import com.example.quizzapp.R;
 import com.example.quizzapp.models.User;
-import com.example.quizzapp.repository.QuizRepository;
+import com.example.quizzapp.repository.AuthRepository;
 
 public class RegisterActivity extends AppCompatActivity {
     private EditText etUsername, etEmail, etPassword, etConfirmPassword, etFullName;
     private Button btnRegister;
     private TextView tvLogin;
     private ProgressBar progressBar;
-    private QuizRepository repository;
+    private AuthRepository repository; // Đổi từ QuizRepository thành AuthRepository
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -28,7 +28,7 @@ public class RegisterActivity extends AppCompatActivity {
         setContentView(R.layout.activity_register);
 
         initViews();
-        repository = new QuizRepository(this);
+        repository = new AuthRepository(this); // Khởi tạo AuthRepository
         setupClickListeners();
     }
 
@@ -85,7 +85,7 @@ public class RegisterActivity extends AppCompatActivity {
         }
 
         showLoading(true);
-        repository.register(username, email, password, fullName, new QuizRepository.AuthCallback() {
+        repository.register(username, email, password, fullName, new AuthRepository.AuthCallback() { // Sửa thành AuthRepository.AuthCallback
             @Override
             public void onSuccess(User user) {
                 runOnUiThread(() -> {

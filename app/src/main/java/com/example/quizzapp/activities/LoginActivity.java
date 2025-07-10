@@ -2,9 +2,9 @@ package com.example.quizzapp.activities;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.text.TextUtils;
 import android.view.View;
 import android.widget.Button;
-import android.widget.EditText;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -12,15 +12,19 @@ import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.example.quizzapp.R;
+import com.example.quizzapp.repository.AuthRepository;
 import com.example.quizzapp.models.User;
-import com.example.quizzapp.repository.QuizRepository;
+import com.example.quizzapp.utils.LoginUtils;
+import com.google.android.material.textfield.TextInputEditText;
 
 public class LoginActivity extends AppCompatActivity {
-    private EditText etUsername, etPassword;
+
+    private TextInputEditText etUsername, etPassword;
     private Button btnLogin;
     private TextView tvRegister;
     private ProgressBar progressBar;
-    private QuizRepository repository;
+
+    private AuthRepository authRepository;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -28,8 +32,13 @@ public class LoginActivity extends AppCompatActivity {
         setContentView(R.layout.activity_login);
 
         initViews();
-        repository = new QuizRepository(this);
+        initRepository();
         setupClickListeners();
+
+        // Kiểm tra đã đăng nhập chưa
+        if (authRepository.isLoggedIn()) {
+            navigateToDashboard();
+        }
     }
 
     private void initViews() {
@@ -40,39 +49,47 @@ public class LoginActivity extends AppCompatActivity {
         progressBar = findViewById(R.id.progressBar);
     }
 
+    private void initRepository() {
+        authRepository = new AuthRepository(this);
+    }
+
     private void setupClickListeners() {
-        btnLogin.setOnClickListener(v -> performLogin());
+        btnLogin.setOnClickListener(v -> handleLogin());
+
         tvRegister.setOnClickListener(v -> {
             Intent intent = new Intent(LoginActivity.this, RegisterActivity.class);
             startActivity(intent);
         });
     }
 
-    private void performLogin() {
-        String username = etUsername.getText().toString().trim();
+    private void handleLogin() {
+        String loginInput = etUsername.getText().toString().trim();
         String password = etPassword.getText().toString().trim();
 
-        if (username.isEmpty()) {
-            etUsername.setError("Username is required");
+        // Validate input cơ bản
+        if (TextUtils.isEmpty(loginInput)) {
+            etUsername.setError("Please enter email or username");
+            etUsername.requestFocus();
             return;
         }
 
-        if (password.isEmpty()) {
-            etPassword.setError("Password is required");
+        if (TextUtils.isEmpty(password)) {
+            etPassword.setError("Please enter password");
+            etPassword.requestFocus();
             return;
         }
 
         showLoading(true);
-        repository.login(username, password, new QuizRepository.AuthCallback() {
+
+        // Đăng nhập thông qua AuthRepository
+        authRepository.login(loginInput, password, new AuthRepository.AuthCallback() {
             @Override
             public void onSuccess(User user) {
                 runOnUiThread(() -> {
                     showLoading(false);
-                    Toast.makeText(LoginActivity.this, "Login successful", Toast.LENGTH_SHORT).show();
-                    Intent intent = new Intent(LoginActivity.this, DashboardActivity.class);
-                    intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
-                    startActivity(intent);
-                    finish();
+                    Toast.makeText(LoginActivity.this,
+                            "Welcome " + user.getFullName() + "!", Toast.LENGTH_SHORT).show();
+                    navigateToDashboard();
                 });
             }
 
@@ -80,14 +97,27 @@ public class LoginActivity extends AppCompatActivity {
             public void onError(String error) {
                 runOnUiThread(() -> {
                     showLoading(false);
-                    Toast.makeText(LoginActivity.this, error, Toast.LENGTH_SHORT).show();
+                    showError(error);
                 });
             }
         });
     }
 
+    private void navigateToDashboard() {
+        Intent intent = new Intent(LoginActivity.this, DashboardActivity.class);
+        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+        startActivity(intent);
+        finish();
+    }
+
+    private void showError(String message) {
+        Toast.makeText(this, message, Toast.LENGTH_LONG).show();
+    }
+
     private void showLoading(boolean show) {
         progressBar.setVisibility(show ? View.VISIBLE : View.GONE);
         btnLogin.setEnabled(!show);
+        etUsername.setEnabled(!show);
+        etPassword.setEnabled(!show);
     }
 }
