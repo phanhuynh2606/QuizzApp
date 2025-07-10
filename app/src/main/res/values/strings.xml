@@ -1,3 +1,93 @@
 <resources>
-    <string name="app_name">QuizzApp</string>
+    <string name="app_name">Quiz App</string>
+    <string name="login_title">Sign In</string>
+    <string name="register_title">Create Account</string>
+    <string name="username_hint">Username</string>
+    <string name="email_hint">Email</string>
+    <string name="password_hint">Password</string>
+    <string name="confirm_password_hint">Confirm Password</string>
+    <string name="full_name_hint">Full Name</string>
+    <string name="login_button">Sign In</string>
+    <string name="register_button">Create Account</string>
+    <string name="no_account">Don&apos;t have an account? Sign Up</string>
+    <string name="have_account">Already have an account? Sign In</string>
+    <string name="take_quiz">Take Quiz</string>
+    <string name="view_history">View History</string>
+    <string name="sync_data">Sync Data</string>
+    <string name="welcome_user">Welcome, %s!</string>
+    <string name="total_quizzes">Total Quizzes: %d</string>
+    <string name="average_score">Average Score: %.1f%%</string>
+    <string name="quiz_history">Quiz History</string>
+    <string name="filter_history">Filter History</string>
+    <string name="export_history">Export History</string>
+    <string name="logout">Logout</string>
+    <string name="offline_mode">Offline Mode</string>
+    <string name="sync_pending">Sync Pending</string>
+    <string name="synced">Synced</string>
+    <string name="score_format">Score: %d/%d</string>
+    <string name="time_format">Time: %s</string>
+    <string name="correct_answers">Correct: %d</string>
+    <string name="wrong_answers">Wrong: %d</string>
+    <string name="quiz_completed">Quiz Completed!</string>
+    <string name="loading">Loading...</string>
+    <string name="no_internet">No internet connection</string>
+    <string name="sync_failed">Sync failed</string>
+    <string name="data_saved_locally">Data saved locally</string>
+
+    <!-- Missing strings for layouts -->
+    <string name="select_subject">Select Subject</string>
+    <string name="select_date_range">Select Date Range</string>
+    <string name="dashboard_title">Dashboard</string>
+    <string name="quiz_list_title">Available Quizzes</string>
+    <string name="quiz_history_title">Quiz History</string>
+    <string name="quiz_result_title">Quiz Results</string>
+    <string name="take_quiz_title">Take Quiz</string>
+
+    <!-- Menu items -->
+    <string name="menu_refresh">Refresh</string>
+    <string name="menu_filter">Filter</string>
+    <string name="menu_export">Export</string>
+    <string name="menu_sync">Sync</string>
+    <string name="menu_logout">Logout</string>
+    <string name="menu_history">History</string>
+
+    <!-- Button texts -->
+    <string name="btn_start_quiz">Start Quiz</string>
+    <string name="btn_view_results">View Results</string>
+    <string name="btn_take_quiz">Take Quiz</string>
+    <string name="btn_retake_quiz">Retake Quiz</string>
+    <string name="btn_view_answers">View Answers</string>
+    <string name="btn_back_to_quiz_list">Back to Quiz List</string>
+    <string name="btn_next">Next</string>
+    <string name="btn_previous">Previous</string>
+    <string name="btn_submit">Submit Quiz</string>
+    <string name="btn_filter">Filter</string>
+
+    <!-- Status texts -->
+    <string name="status_active">Active</string>
+    <string name="status_inactive">Inactive</string>
+    <string name="status_synced">Synced</string>
+    <string name="status_pending">Pending</string>
+    <string name="status_failed">Failed</string>
+
+    <!-- General texts -->
+    <string name="questions_count">%d questions</string>
+    <string name="duration_minutes">%d minutes</string>
+    <string name="score_percentage">%d%%</string>
+    <string name="correct_answers">Correct: %d/%d</string>
+    <string name="points_earned">Points: %d/%d</string>
+    <string name="no_quiz_history">No Quiz History</string>
+    <string name="no_quiz_history_message">You haven\'t completed any quizzes yet.\nStart taking quizzes to see your history here!</string>
+
+    <!-- Error messages -->
+    <string name="error_network">Network error. Please check your connection.</string>
+    <string name="error_login_failed">Login failed. Please check your credentials.</string>
+    <string name="error_register_failed">Registration failed. Please try again.</string>
+    <string name="error_quiz_load_failed">Failed to load quiz. Please try again.</string>
+
+    <!-- Success messages -->
+    <string name="success_login">Login successful!</string>
+    <string name="success_register">Registration successful!</string>
+    <string name="success_quiz_completed">Quiz completed successfully!</string>
+    <string name="success_sync">Data synchronized successfully!</string>
 </resources>
