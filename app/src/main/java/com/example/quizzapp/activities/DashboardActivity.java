@@ -13,12 +13,14 @@ import androidx.appcompat.widget.Toolbar;
 
 import com.example.quizzapp.R;
 import com.example.quizzapp.models.User;
+import com.example.quizzapp.repository.AuthRepository;
 import com.example.quizzapp.repository.QuizRepository;
 
 public class DashboardActivity extends AppCompatActivity {
     private TextView tvWelcome, tvTotalQuizzes, tvAverageScore;
     private Button btnTakeQuiz, btnViewHistory, btnSyncData;
-    private QuizRepository repository;
+    private AuthRepository authRepository; // Đổi thành AuthRepository cho user management
+    private QuizRepository quizRepository; // Thêm QuizRepository cho quiz operations
     private User currentUser;
 
     @Override
@@ -27,7 +29,8 @@ public class DashboardActivity extends AppCompatActivity {
         setContentView(R.layout.activity_dashboard);
 
         initViews();
-        repository = new QuizRepository(this);
+        authRepository = new AuthRepository(this); // Khởi tạo AuthRepository
+        quizRepository = new QuizRepository(this); // Khởi tạo QuizRepository
         setupToolbar();
         loadUserData();
        // setupClickListeners();
@@ -51,22 +54,21 @@ public class DashboardActivity extends AppCompatActivity {
     }
 
     private void loadUserData() {
-        repository.getLoggedInUser(new QuizRepository.UserCallback() {
+        authRepository.getCurrentUser(new AuthRepository.UserCallback() {
             @Override
-            public void onSuccess(User user) {
-                currentUser = user;
-                runOnUiThread(() -> {
-                    tvWelcome.setText("Welcome, " + user.getFullName());
-                    loadStatistics();
-                });
-            }
-
-            @Override
-            public void onError(String error) {
-                runOnUiThread(() -> {
-                    Toast.makeText(DashboardActivity.this, "Error loading user data", Toast.LENGTH_SHORT).show();
-                    navigateToLogin();
-                });
+            public void onResult(User user) {
+                if (user != null) {
+                    currentUser = user;
+                    runOnUiThread(() -> {
+                        tvWelcome.setText("Welcome, " + user.getFullName());
+                        loadStatistics();
+                    });
+                } else {
+                    runOnUiThread(() -> {
+                        Toast.makeText(DashboardActivity.this, "No user logged in", Toast.LENGTH_SHORT).show();
+                        navigateToLogin();
+                    });
+                }
             }
         });
     }
@@ -118,8 +120,24 @@ public class DashboardActivity extends AppCompatActivity {
     }
 
     private void logout() {
-        repository.logout();
-        navigateToLogin();
+        authRepository.logout(new AuthRepository.AuthCallback() {
+            @Override
+            public void onSuccess(User user) {
+                runOnUiThread(() -> {
+                    Toast.makeText(DashboardActivity.this, "Logged out successfully", Toast.LENGTH_SHORT).show();
+                    navigateToLogin();
+                });
+            }
+
+            @Override
+            public void onError(String error) {
+                runOnUiThread(() -> {
+                    Toast.makeText(DashboardActivity.this, "Logout failed: " + error, Toast.LENGTH_SHORT).show();
+                    // Vẫn chuyển về login dù logout failed
+                    navigateToLogin();
+                });
+            }
+        });
     }
 
     private void navigateToLogin() {

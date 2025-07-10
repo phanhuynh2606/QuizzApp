@@ -56,7 +56,7 @@ public class QuizListActivity extends AppCompatActivity {
     }
 
     private void loadQuizzes() {
-        repository.getQuizzes(new QuizRepository.QuizCallback() {
+        repository.getAllQuizzes(new QuizRepository.QuizListCallback() {
             @Override
             public void onSuccess(List<Quiz> quizList) {
                 runOnUiThread(() -> {
