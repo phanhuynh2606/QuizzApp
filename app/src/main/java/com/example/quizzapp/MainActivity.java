@@ -1,5 +1,6 @@
 package com.example.quizzapp;
 
+import android.content.Intent;
 import android.os.Bundle;
 
 import androidx.activity.EdgeToEdge;
@@ -8,7 +9,13 @@ import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 
+import com.example.quizzapp.activities.DashboardActivity;
+import com.example.quizzapp.activities.LoginActivity;
+import com.example.quizzapp.models.User;
+import com.example.quizzapp.repository.QuizRepository;
+
 public class MainActivity extends AppCompatActivity {
+private QuizRepository repository;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -19,6 +26,35 @@ public class MainActivity extends AppCompatActivity {
             Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
             return insets;
+
+
+
         });
+     repository = new QuizRepository(this);
+        repository.getLoggedInUser(new QuizRepository.UserCallback() {
+            @Override
+            public void onSuccess(User user) {
+                if (user != null) {
+                    // User is logged in, navigate to dashboard
+                    Intent intent = new Intent(MainActivity.this, DashboardActivity.class);
+                    startActivity(intent);
+                    finish();
+                } else {
+                    // No user logged in, navigate to login
+                    Intent intent = new Intent(MainActivity.this, LoginActivity.class);
+                    startActivity(intent);
+                    finish();
+                }
+            }
+
+            @Override
+            public void onError(String error) {
+                // No user logged in, navigate to login
+                Intent intent = new Intent(MainActivity.this, LoginActivity.class);
+                startActivity(intent);
+                finish();
+            }
+        });
+
     }
 }
