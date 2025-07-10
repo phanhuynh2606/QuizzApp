@@ -1,11 +1,14 @@
 package com.example.quizzapp.models;
 import androidx.room.Entity;
 import androidx.room.PrimaryKey;
+import androidx.room.Ignore;
+import androidx.annotation.NonNull;
 
 @Entity(tableName = "users")
 
 public class User {
-    @PrimaryKey // MongoDB ObjectId từ server API
+    @PrimaryKey
+    @NonNull
     private String id;
     private String username;
     private String email;
@@ -16,7 +19,9 @@ public class User {
 
     public User() {}
 
-    public User(String username, String email, String password, String fullName) {
+    @Ignore
+    public User(String id,String username, String email, String password, String fullName) {
+        this.id = id; // MongoDB ObjectId từ server
         this.username = username;
         this.email = email;
         this.password = password;

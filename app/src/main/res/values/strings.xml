@@ -4,12 +4,13 @@
     <string name="register_title">Create Account</string>
     <string name="username_hint">Username</string>
     <string name="email_hint">Email</string>
+    <string name="email_or_username_hint">Email or Username</string>
     <string name="password_hint">Password</string>
     <string name="confirm_password_hint">Confirm Password</string>
     <string name="full_name_hint">Full Name</string>
     <string name="login_button">Sign In</string>
     <string name="register_button">Create Account</string>
-    <string name="no_account">Don&apos;t have an account? Sign Up</string>
+    <string name="no_account">Don\'t have an account? Sign Up</string>
     <string name="have_account">Already have an account? Sign In</string>
     <string name="take_quiz">Take Quiz</string>
     <string name="view_history">View History</string>
@@ -24,10 +25,10 @@
     <string name="offline_mode">Offline Mode</string>
     <string name="sync_pending">Sync Pending</string>
     <string name="synced">Synced</string>
-    <string name="score_format">Score: %d/%d</string>
+    <string name="score_format" formatted="false">Score: %d/%d</string>
     <string name="time_format">Time: %s</string>
-    <string name="correct_answers">Correct: %d</string>
-    <string name="wrong_answers">Wrong: %d</string>
+    <string name="correct_answers" formatted="false">Correct: %d</string>
+    <string name="wrong_answers" formatted="false">Wrong: %d</string>
     <string name="quiz_completed">Quiz Completed!</string>
     <string name="loading">Loading...</string>
     <string name="no_internet">No internet connection</string>
@@ -49,7 +50,6 @@
     <string name="menu_export">Export</string>
     <string name="menu_sync">Sync</string>
     <string name="menu_logout">Logout</string>
-    <string name="menu_history">History</string>
 
     <!-- Button texts -->
     <string name="btn_start_quiz">Start Quiz</string>
@@ -74,8 +74,7 @@
     <string name="questions_count">%d questions</string>
     <string name="duration_minutes">%d minutes</string>
     <string name="score_percentage">%d%%</string>
-    <string name="correct_answers">Correct: %d/%d</string>
-    <string name="points_earned">Points: %d/%d</string>
+    <string name="points_earned" formatted="false">Points: %d/%d</string>
     <string name="no_quiz_history">No Quiz History</string>
     <string name="no_quiz_history_message">You haven\'t completed any quizzes yet.\nStart taking quizzes to see your history here!</string>
 

@@ -2,6 +2,8 @@ package com.example.quizzapp.models;
 
 import androidx.room.Entity;
 import androidx.room.PrimaryKey;
+import androidx.room.Ignore;
+import androidx.annotation.NonNull;
 
 /**
  * Model để chứa dữ liệu Quiz từ API
@@ -12,6 +14,7 @@ import androidx.room.PrimaryKey;
 @Entity(tableName = "quizzes")
 public class Quiz {
     @PrimaryKey // MongoDB ObjectId từ server API
+    @NonNull
     private String id; // "_id": "64f8a1b2c3d4e5f6789012ab"
     private String title;
     private String description;
@@ -25,6 +28,7 @@ public class Quiz {
     public Quiz() {}
 
     // Constructor cho dữ liệu từ API
+    @Ignore
     public Quiz(String id, String title, String description, String subject,
                 int totalQuestions, int timeLimit, String difficulty) {
         this.id = id; // MongoDB ObjectId từ server
