@@ -21,6 +21,7 @@ public abstract class QuizDatabase  extends RoomDatabase {
 
     public abstract UserDao userDao();
 
+    public abstract  QuizDao quizDao();
     public static synchronized QuizDatabase getInstance(Context context) {
         if (instance == null) {
             instance = Room.databaseBuilder(

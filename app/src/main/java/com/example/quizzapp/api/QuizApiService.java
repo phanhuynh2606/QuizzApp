@@ -2,9 +2,13 @@ package com.example.quizzapp.api;
 
 
 import com.example.quizzapp.models.User;
+import com.example.quizzapp.models.Quiz;
+
+import java.util.List;
 
 import retrofit2.Call;
 import retrofit2.http.Body;
+import retrofit2.http.GET;
 import retrofit2.http.POST;
 
 public interface QuizApiService {
@@ -13,6 +17,10 @@ public interface QuizApiService {
 
     @POST("auth/register")
     Call<ApiResponse<User>> register(@Body RegisterRequest registerRequest);
+
+    // Quiz endpoints
+    @GET("quizzes")
+    Call<ApiResponse<List<Quiz>>> getQuizzes();
 
     class ApiResponse<T> {
         private boolean success;
