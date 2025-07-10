@@ -5,8 +5,10 @@ import android.content.Context;
 import com.example.quizzapp.api.ApiClient;
 import com.example.quizzapp.api.QuizApiService;
 import com.example.quizzapp.database.QuizDatabase;
+import com.example.quizzapp.models.Quiz;
 import com.example.quizzapp.models.User;
 
+import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -101,7 +103,37 @@ public class QuizRepository {
             database.userDao().logoutAllUsers();
         });
     }
-
+    // Quiz Management
+    public void getQuizzes(QuizCallback callback) {
+        apiService.getQuizzes().enqueue(new Callback<QuizApiService.ApiResponse<List<Quiz>>>() {
+            @Override
+            public void onResponse(Call<QuizApiService.ApiResponse<List<Quiz>>> call, Response<QuizApiService.ApiResponse<List<Quiz>>> response) {
+                if (response.isSuccessful() && response.body() != null && response.body().isSuccess()) {
+                    List<Quiz> quizzes = response.body().getData();
+                    // Save to local database
+                    executor.execute(() -> {
+                        database.quizDao().deleteAllQuizzes();
+                        database.quizDao().insertQuizzes(quizzes);
+                    });
+                    callback.onSuccess(quizzes);
+                } else {
+                    // Load from local database
+                    executor.execute(() -> {
+                        List<Quiz> localQuizzes = database.quizDao().getAllQuizzes();
+                        callback.onSuccess(localQuizzes);
+                    });
+                }
+            }
+            @Override
+            public void onFailure(Call<QuizApiService.ApiResponse<List<Quiz>>> call, Throwable t) {
+                // Load from local database
+                executor.execute(() -> {
+                    List<Quiz> localQuizzes = database.quizDao().getAllQuizzes();
+                    callback.onSuccess(localQuizzes);
+                });
+            }
+        });
+    }
     // Callback interfaces
     public interface AuthCallback {
         void onSuccess(User user);
@@ -109,6 +141,10 @@ public class QuizRepository {
     }
     public interface UserCallback {
         void onSuccess(User user);
+        void onError(String error);
+    }
+    public interface QuizCallback {
+        void onSuccess(List<Quiz> quizzes);
         void onError(String error);
     }
 }

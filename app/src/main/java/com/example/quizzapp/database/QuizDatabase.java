@@ -7,9 +7,9 @@ import androidx.room.Room;
 import androidx.room.RoomDatabase;
 
 import com.example.quizzapp.models.User;
-
+import com.example.quizzapp.models.Quiz;
 @Database(
- entities ={User.class},
+ entities ={User.class, Quiz.class},
 version = 1,
 exportSchema = true
 
@@ -21,6 +21,7 @@ public abstract class QuizDatabase  extends RoomDatabase {
 
     public abstract UserDao userDao();
 
+    public abstract  QuizDao quizDao();
     public static synchronized QuizDatabase getInstance(Context context) {
         if (instance == null) {
             instance = Room.databaseBuilder(
