@@ -14,12 +14,11 @@ import androidx.appcompat.app.AppCompatActivity;
 import com.example.quizzapp.R;
 import com.example.quizzapp.repository.AuthRepository;
 import com.example.quizzapp.models.User;
-import com.example.quizzapp.utils.LoginUtils;
 import com.google.android.material.textfield.TextInputEditText;
 
 public class LoginActivity extends AppCompatActivity {
 
-    private TextInputEditText etUsername, etPassword;
+    private TextInputEditText etEmail, etPassword;
     private Button btnLogin;
     private TextView tvRegister;
     private ProgressBar progressBar;
@@ -42,7 +41,7 @@ public class LoginActivity extends AppCompatActivity {
     }
 
     private void initViews() {
-        etUsername = findViewById(R.id.etUsername);
+        etEmail = findViewById(R.id.etEmail);
         etPassword = findViewById(R.id.etPassword);
         btnLogin = findViewById(R.id.btnLogin);
         tvRegister = findViewById(R.id.tvRegister);
@@ -63,13 +62,13 @@ public class LoginActivity extends AppCompatActivity {
     }
 
     private void handleLogin() {
-        String loginInput = etUsername.getText().toString().trim();
-        String password = etPassword.getText().toString().trim();
+        String loginInput = etEmail.getText() != null ? etEmail.getText().toString().trim() : "";
+        String password = etPassword.getText() != null ? etPassword.getText().toString().trim() : "";
 
         // Validate input cơ bản
         if (TextUtils.isEmpty(loginInput)) {
-            etUsername.setError("Please enter email or username");
-            etUsername.requestFocus();
+            etEmail.setError("Please enter email");
+            etEmail.requestFocus();
             return;
         }
 
@@ -117,7 +116,7 @@ public class LoginActivity extends AppCompatActivity {
     private void showLoading(boolean show) {
         progressBar.setVisibility(show ? View.VISIBLE : View.GONE);
         btnLogin.setEnabled(!show);
-        etUsername.setEnabled(!show);
+        etEmail.setEnabled(!show);
         etPassword.setEnabled(!show);
     }
 }

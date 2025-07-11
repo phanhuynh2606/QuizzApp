@@ -4,7 +4,7 @@ import retrofit2.Retrofit;
 import retrofit2.converter.gson.GsonConverterFactory;
 
 public class ApiClient {
-    private static final String BASE_URL = "http://localhost:5000/api/"; // Thay đổi URL này
+    private static final String BASE_URL = "http://10.0.2.2:5000/api/"; // Thay đổi URL này
     private static Retrofit retrofit;
     private static QuizApiService quizApiService;
     private static AuthApiService authApiService;
