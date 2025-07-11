@@ -4,21 +4,16 @@ package com.example.quizzapp.models.api;
  * Request model cho API đăng ký
  */
 public class RegisterRequest {
-    private String username;
     private String email;
     private String password;
     private String fullName;
 
-    public RegisterRequest(String username, String email, String password, String fullName) {
-        this.username = username;
+    public RegisterRequest(String email, String password, String fullName) {
         this.email = email;
         this.password = password;
         this.fullName = fullName;
     }
 
-    // Getters and setters
-    public String getUsername() { return username; }
-    public void setUsername(String username) { this.username = username; }
 
     public String getEmail() { return email; }
     public void setEmail(String email) { this.email = email; }

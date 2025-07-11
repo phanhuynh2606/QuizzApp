@@ -16,11 +16,11 @@ import com.example.quizzapp.models.User;
 import com.example.quizzapp.repository.AuthRepository;
 
 public class RegisterActivity extends AppCompatActivity {
-    private EditText etUsername, etEmail, etPassword, etConfirmPassword, etFullName;
+    private EditText etEmail, etPassword, etConfirmPassword, etFullName;
     private Button btnRegister;
     private TextView tvLogin;
     private ProgressBar progressBar;
-    private AuthRepository repository; // Đổi từ QuizRepository thành AuthRepository
+    private AuthRepository repository;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -28,12 +28,11 @@ public class RegisterActivity extends AppCompatActivity {
         setContentView(R.layout.activity_register);
 
         initViews();
-        repository = new AuthRepository(this); // Khởi tạo AuthRepository
+        repository = new AuthRepository(this);
         setupClickListeners();
     }
 
     private void initViews() {
-        etUsername = findViewById(R.id.etUsername);
         etEmail = findViewById(R.id.etEmail);
         etPassword = findViewById(R.id.etPassword);
         etConfirmPassword = findViewById(R.id.etConfirmPassword);
@@ -53,16 +52,10 @@ public class RegisterActivity extends AppCompatActivity {
     }
 
     private void performRegister() {
-        String username = etUsername.getText().toString().trim();
         String email = etEmail.getText().toString().trim();
         String password = etPassword.getText().toString().trim();
         String confirmPassword = etConfirmPassword.getText().toString().trim();
         String fullName = etFullName.getText().toString().trim();
-
-        if (username.isEmpty()) {
-            etUsername.setError("Username is required");
-            return;
-        }
 
         if (email.isEmpty()) {
             etEmail.setError("Email is required");
@@ -85,7 +78,7 @@ public class RegisterActivity extends AppCompatActivity {
         }
 
         showLoading(true);
-        repository.register(username, email, password, fullName, new AuthRepository.AuthCallback() { // Sửa thành AuthRepository.AuthCallback
+        repository.register(email, password, fullName, new AuthRepository.AuthCallback() {
             @Override
             public void onSuccess(User user) {
                 runOnUiThread(() -> {

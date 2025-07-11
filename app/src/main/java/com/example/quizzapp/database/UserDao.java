@@ -31,20 +31,14 @@ public interface UserDao {
     @Query("SELECT * FROM users WHERE id = :id")
     User getUserById(String id);
 
-    @Query("SELECT * FROM users WHERE username = :username")
-    User getUserByUsername(String username);
-
     @Query("SELECT * FROM users WHERE email = :email")
     User getUserByEmail(String email);
 
     @Query("SELECT * FROM users WHERE isLoggedIn = 1 LIMIT 1")
     User getLoggedInUser();
 
-    @Query("SELECT * FROM users WHERE (username = :loginInput OR email = :loginInput) AND password = :password LIMIT 1")
-    User getUserByLoginCredentials(String loginInput, String password);
-
-    @Query("SELECT * FROM users ORDER BY createdAt DESC")
-    List<User> getAllUsers();
+    @Query("SELECT * FROM users WHERE (email = :loginInput) AND hashedPassword = :hashedPassword LIMIT 1")
+    User getUserByLoginCredentials(String loginInput, String hashedPassword);
 
     @Query("UPDATE users SET isLoggedIn = 0")
     void logoutAllUsers();
@@ -52,12 +46,17 @@ public interface UserDao {
     @Query("UPDATE users SET isLoggedIn = 1 WHERE id = :userId")
     void setUserLoggedIn(String userId);
 
-    @Query("SELECT * FROM users WHERE username = :username AND password = :password LIMIT 1")
-    User loginUser(String username, String password);
+    @Query("SELECT * FROM users WHERE email = :email AND hashedPassword = :password LIMIT 1")
+    User loginUser(String email, String password);
 
-    @Query("SELECT COUNT(*) FROM users WHERE username = :username")
-    int checkUsernameExists(String username);
 
     @Query("SELECT COUNT(*) FROM users WHERE email = :email")
     int checkEmailExists(String email);
+
+    @Query("DELETE FROM users")
+    void deleteAll();
+
+    // Phương thức mới để lấy user theo email để xác thực password
+    @Query("SELECT * FROM users WHERE email = :email LIMIT 1")
+    User getUserForPasswordVerification(String email);
 }

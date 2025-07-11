@@ -49,7 +49,7 @@ public class DashboardActivity extends AppCompatActivity {
         Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
         if (getSupportActionBar() != null) {
-            getSupportActionBar().setTitle("Quiz Dashboard");
+            getSupportActionBar().setTitle("Dashboard");
         }
     }
 
@@ -112,11 +112,42 @@ public class DashboardActivity extends AppCompatActivity {
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         int id = item.getItemId();
-        if (id == R.id.action_logout) {
-            logout();
+
+        if (id == R.id.action_profile) {
+            // Navigate to Profile Activity
+            Intent intent = new Intent(this, ProfileActivity.class);
+            startActivity(intent);
+            return true;
+        } else if (id == R.id.action_logout) {
+            // Handle logout from menu
+            handleLogoutFromMenu();
             return true;
         }
+
         return super.onOptionsItemSelected(item);
+    }
+
+    private void handleLogoutFromMenu() {
+        authRepository.logout(new AuthRepository.AuthCallback() {
+            @Override
+            public void onSuccess(User user) {
+                runOnUiThread(() -> {
+                    Toast.makeText(DashboardActivity.this, "Logged out successfully", Toast.LENGTH_SHORT).show();
+
+                    Intent intent = new Intent(DashboardActivity.this, LoginActivity.class);
+                    intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+                    startActivity(intent);
+                    finish();
+                });
+            }
+
+            @Override
+            public void onError(String error) {
+                runOnUiThread(() -> {
+                    Toast.makeText(DashboardActivity.this, "Logout failed: " + error, Toast.LENGTH_SHORT).show();
+                });
+            }
+        });
     }
 
     private void logout() {
