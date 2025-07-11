@@ -9,10 +9,13 @@ import com.example.quizzapp.database.QuizDatabase;
 import com.example.quizzapp.database.UserDao;
 import com.example.quizzapp.models.User;
 import com.example.quizzapp.models.api.ApiResponse;
+import com.example.quizzapp.models.api.ChangePasswordRequest;
 import com.example.quizzapp.models.api.LoginRequest;
 import com.example.quizzapp.models.api.RegisterRequest;
 import com.example.quizzapp.models.api.RegisterResponse;
 import com.example.quizzapp.models.api.LoginResponse;
+import com.example.quizzapp.models.api.RefreshTokenRequest;
+import com.example.quizzapp.utils.Constants;
 import com.example.quizzapp.utils.LoginUtils;
 import com.example.quizzapp.utils.PasswordUtils;
 import com.example.quizzapp.utils.TokenManager;
@@ -38,10 +41,10 @@ public class AuthRepository {
 
     public AuthRepository(Context context) {
         database = QuizDatabase.getInstance(context);
-        authApiService = ApiClient.getAuthApiService();
+        authApiService = ApiClient.getAuthApiService(context); // Đã fix
         userDao = database.userDao();
         executor = Executors.newSingleThreadExecutor();
-        tokenManager = new TokenManager(context); // Khởi tạo TokenManager
+        tokenManager = new TokenManager(context);
     }
 
     /**
@@ -58,7 +61,7 @@ public class AuthRepository {
         }
 
         if (!LoginUtils.isValidPassword(password)) {
-            callback.onError("Password must be at least 6 characters");
+            callback.onError("Password must be at least " + Constants.MIN_PASSWORD_LENGTH + " characters");
             return;
         }
 
@@ -108,10 +111,45 @@ public class AuthRepository {
                     Log.d(TAG, "Login successful for user: " + user.getEmail());
                     callback.onSuccess(user);
                 } else {
+                    // Xử lý lỗi từ server
                     String message = response.body() != null ? response.body().getMessage() : "Login failed";
 
-                    // Thử đăng nhập offline nếu API thất bại
-                    tryOfflineLogin(loginInput, password, callback, message);
+                    // Kiểm tra loại lỗi để quyết định có thử offline không
+                    boolean shouldTryOffline = false;
+
+                    if (response.code() >= 500) {
+                        // Server error (5xx) - có thể thử offline
+                        shouldTryOffline = true;
+                        message = "Server temporarily unavailable";
+                    } else if (response.code() == 401 || response.code() == 403) {
+                        // Unauthorized/Forbidden - không thử offline vì credentials sai
+                        message = "Invalid email or password";
+                        shouldTryOffline = false;
+                    } else if (response.body() != null && response.body().getMessage() != null) {
+                        // Lấy message từ server response
+                        message = response.body().getMessage();
+
+                        // Kiểm tra message để quyết định có thử offline không
+                        String serverMessage = message.toLowerCase();
+                        if (serverMessage.contains("invalid credentials") ||
+                            serverMessage.contains("incorrect") ||
+                            serverMessage.contains("wrong password") ||
+                            serverMessage.contains("user not found")) {
+                            // Lỗi credentials - không thử offline
+                            shouldTryOffline = false;
+                        } else {
+                            // Lỗi khác - có thể thử offline
+                            shouldTryOffline = true;
+                        }
+                    }
+
+                    if (shouldTryOffline) {
+                        Log.d(TAG, "Server error, trying offline login");
+                        tryOfflineLogin(loginInput, password, callback, message);
+                    } else {
+                        Log.d(TAG, "Authentication failed, not trying offline: " + message);
+                        callback.onError(message);
+                    }
                 }
             }
 
@@ -290,6 +328,115 @@ public class AuthRepository {
         // Sử dụng TokenManager thay vì database để tránh main thread blocking
         return tokenManager.hasToken();
     }
+
+    /**
+     * Đổi mật khẩu - Đơn giản hóa vì TokenInterceptor đã xử lý refresh token tự động
+     */
+    public void changePassword(String currentPassword, String newPassword, AuthCallback callback) {
+        // Validate input
+        if (currentPassword == null || currentPassword.trim().isEmpty()) {
+            callback.onError("Current password is required");
+            return;
+        }
+
+        if (newPassword == null || newPassword.trim().isEmpty()) {
+            callback.onError("New password is required");
+            return;
+        }
+
+        if (newPassword.length() < Constants.MIN_PASSWORD_LENGTH) {
+            callback.onError("New password must be at least " + Constants.MIN_PASSWORD_LENGTH + " characters");
+            return;
+        }
+
+        // Kiểm tra có token không
+        if (!tokenManager.hasToken()) {
+            callback.onError("You are not logged in. Please login again.");
+            return;
+        }
+
+        ChangePasswordRequest request = new ChangePasswordRequest(currentPassword, newPassword);
+        Log.d(TAG, "Sending change password request");
+
+        // TokenInterceptor sẽ tự động thêm Authorization header và xử lý refresh token
+        authApiService.changePassword("", request).enqueue(new Callback<ApiResponse<Void>>() {
+            @Override
+            public void onResponse(Call<ApiResponse<Void>> call, Response<ApiResponse<Void>> response) {
+                Log.d(TAG, "Change password response code: " + response.code());
+
+                if (response.isSuccessful() && response.body() != null && response.body().isSuccess()) {
+                    Log.d(TAG, "Password changed successfully on server");
+
+                    // Cập nhật password trong database local
+                    updatePasswordInLocalDatabase(newPassword, callback);
+
+                } else if (response.code() == 401) {
+                    // Nếu vẫn 401 sau khi TokenInterceptor đã thử refresh, có nghĩa là refresh token hết hạn
+                    Log.e(TAG, "401 after token refresh attempt - session expired");
+                    tokenManager.clearTokens();
+                    callback.onError("Session expired. Please login again.");
+                } else {
+                    // Xử lý các lỗi khác
+                    String message = "Failed to change password";
+                    if (response.body() != null && response.body().getMessage() != null) {
+                        message = response.body().getMessage();
+                    } else if (response.errorBody() != null) {
+                        try {
+                            String errorBody = response.errorBody().string();
+                            Log.e(TAG, "Change password error: " + errorBody);
+                            // Parse error message from server
+                            if (errorBody.contains("Current password is incorrect")) {
+                                message = "Current password is incorrect";
+                            } else if (errorBody.contains("Password")) {
+                                message = "Password validation failed";
+                            }
+                        } catch (Exception e) {
+                            Log.e(TAG, "Error reading error body: " + e.getMessage());
+                        }
+                    }
+                    callback.onError(message);
+                }
+            }
+
+            @Override
+            public void onFailure(Call<ApiResponse<Void>> call, Throwable t) {
+                Log.e(TAG, "Change password API call failed: " + t.getMessage());
+                callback.onError("Network error: " + t.getMessage());
+            }
+        });
+    }
+
+    /**
+     * Cập nhật password trong database local sau khi đổi mật khẩu thành công
+     */
+    private void updatePasswordInLocalDatabase(String newPassword, AuthCallback callback) {
+        executor.execute(() -> {
+            try {
+                User currentUser = userDao.getLoggedInUser();
+                if (currentUser != null) {
+                    // Hash password mới với salt mới
+                    PasswordUtils.HashedPassword hashedPassword = PasswordUtils.hashPasswordWithSalt(newPassword);
+
+                    // Cập nhật password và salt trong database
+                    userDao.updateUserPassword(
+                        currentUser.getId(),
+                        hashedPassword.getHashedPassword(),
+                        hashedPassword.getSalt()
+                    );
+
+                    Log.d(TAG, "Password updated in local database");
+                    callback.onSuccess(null);
+                } else {
+                    Log.e(TAG, "No current user found in database");
+                    callback.onError("Failed to update local password");
+                }
+            } catch (Exception e) {
+                Log.e(TAG, "Error updating password in local database: " + e.getMessage());
+                callback.onError("Failed to update local password: " + e.getMessage());
+            }
+        });
+    }
+
 
     // Callback interfaces
     public interface AuthCallback {
