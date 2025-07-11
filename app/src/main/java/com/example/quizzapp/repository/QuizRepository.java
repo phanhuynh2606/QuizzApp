@@ -30,7 +30,7 @@ public class QuizRepository {
 
     public QuizRepository(Context context) {
         database = QuizDatabase.getInstance(context);
-        quizApiService = ApiClient.getQuizApiService(); // Sử dụng method mới
+        quizApiService = ApiClient.getQuizApiService(context); // Truyền context
         quizDao = database.quizDao();
         executor = Executors.newFixedThreadPool(4);
     }

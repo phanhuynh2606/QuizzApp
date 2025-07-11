@@ -8,14 +8,15 @@ import androidx.room.RoomDatabase;
 
 import com.example.quizzapp.models.User;
 import com.example.quizzapp.models.Quiz;
+import com.example.quizzapp.utils.Constants;
+
 @Database(
  entities ={User.class, Quiz.class},
-version = 2,
+version = Constants.DATABASE_VERSION,
 exportSchema = false
 )
 public abstract class QuizDatabase  extends RoomDatabase {
 
-    private static final String DATABASE_NAME = "quiz_database";
     private static QuizDatabase instance;
 
     public abstract UserDao userDao();
@@ -26,7 +27,7 @@ public abstract class QuizDatabase  extends RoomDatabase {
             instance = Room.databaseBuilder(
                             context.getApplicationContext(),
                             QuizDatabase.class,
-                            DATABASE_NAME
+                            Constants.DATABASE_NAME
                     )
                     .fallbackToDestructiveMigration()
                     .build();

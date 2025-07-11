@@ -53,10 +53,13 @@ public interface UserDao {
     @Query("SELECT COUNT(*) FROM users WHERE email = :email")
     int checkEmailExists(String email);
 
-    @Query("DELETE FROM users")
-    void deleteAll();
-
     // Phương thức mới để lấy user theo email để xác thực password
     @Query("SELECT * FROM users WHERE email = :email LIMIT 1")
     User getUserForPasswordVerification(String email);
+
+    @Query("UPDATE users SET hashedPassword = :hashedPassword, salt = :salt WHERE id = :userId")
+    void updateUserPassword(String userId, String hashedPassword, String salt);
+
+    @Query("DELETE FROM users")
+    void deleteAll();
 }

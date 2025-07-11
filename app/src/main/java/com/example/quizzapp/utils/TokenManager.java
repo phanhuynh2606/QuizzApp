@@ -7,7 +7,6 @@ import android.content.SharedPreferences;
  * Utility class để quản lý JWT tokens (access token, refresh token)
  */
 public class TokenManager {
-    private static final String PREF_NAME = "auth_tokens";
     private static final String KEY_ACCESS_TOKEN = "access_token";
     private static final String KEY_REFRESH_TOKEN = "refresh_token";
     private static final String KEY_TOKEN_TYPE = "token_type";
@@ -17,7 +16,7 @@ public class TokenManager {
     private SharedPreferences sharedPreferences;
 
     public TokenManager(Context context) {
-        sharedPreferences = context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE);
+        sharedPreferences = context.getSharedPreferences(Constants.PREF_AUTH_TOKENS, Context.MODE_PRIVATE);
     }
 
     /**
@@ -51,7 +50,7 @@ public class TokenManager {
      * Lấy token type (thường là "Bearer")
      */
     public String getTokenType() {
-        return sharedPreferences.getString(KEY_TOKEN_TYPE, "Bearer");
+        return sharedPreferences.getString(KEY_TOKEN_TYPE, Constants.DEFAULT_TOKEN_TYPE);
     }
 
     /**
@@ -59,20 +58,6 @@ public class TokenManager {
      */
     public boolean hasToken() {
         return getAccessToken() != null;
-    }
-
-    /**
-     * Kiểm tra token có hết hạn không (dựa trên expiresIn)
-     */
-    public boolean isTokenExpired() {
-        String expiresIn = sharedPreferences.getString(KEY_EXPIRES_IN, "15m");
-        long timestamp = sharedPreferences.getLong(KEY_TOKEN_TIMESTAMP, 0);
-
-        if (timestamp == 0) return true;
-
-        // Chuyển đổi expiresIn (ví dụ: "15m") thành milliseconds
-        long expirationTime = parseExpirationTime(expiresIn);
-        return (System.currentTimeMillis() - timestamp) > expirationTime;
     }
 
     /**
@@ -98,30 +83,10 @@ public class TokenManager {
     }
 
     /**
-     * Chuyển đổi expiresIn string thành milliseconds
+     * Kiểm tra refresh token có hợp lệ không
      */
-    private long parseExpirationTime(String expiresIn) {
-        if (expiresIn == null || expiresIn.isEmpty()) {
-            return 15 * 60 * 1000; // Mặc định 15 phút
-        }
-
-        try {
-            if (expiresIn.endsWith("m")) {
-                int minutes = Integer.parseInt(expiresIn.substring(0, expiresIn.length() - 1));
-                return minutes * 60 * 1000;
-            } else if (expiresIn.endsWith("h")) {
-                int hours = Integer.parseInt(expiresIn.substring(0, expiresIn.length() - 1));
-                return hours * 60 * 60 * 1000;
-            } else if (expiresIn.endsWith("d")) {
-                int days = Integer.parseInt(expiresIn.substring(0, expiresIn.length() - 1));
-                return days * 24 * 60 * 60 * 1000;
-            } else {
-                // Nếu chỉ là số, coi như là giây
-                int seconds = Integer.parseInt(expiresIn);
-                return seconds * 1000;
-            }
-        } catch (NumberFormatException e) {
-            return 15 * 60 * 1000; // Mặc định 15 phút nếu parse lỗi
-        }
+    public boolean hasValidRefreshToken() {
+        String refreshToken = getRefreshToken();
+        return refreshToken != null && !refreshToken.isEmpty();
     }
 }

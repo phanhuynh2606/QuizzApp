@@ -180,18 +180,31 @@ public class ProfileActivity extends AppCompatActivity {
             return;
         }
 
-        // TODO: Implement change password API call
+        // Call API to change password
         showLoading(true);
 
-        // For now, just show success message
-        // In a real implementation, you would call an API to change password
-        showLoading(false);
-        Toast.makeText(this, "Password change feature will be implemented with API", Toast.LENGTH_LONG).show();
+        authRepository.changePassword(currentPassword, newPassword, new AuthRepository.AuthCallback() {
+            @Override
+            public void onSuccess(User user) {
+                runOnUiThread(() -> {
+                    showLoading(false);
+                    Toast.makeText(ProfileActivity.this, "Password changed successfully!", Toast.LENGTH_SHORT).show();
 
-        // Clear password fields
-        etCurrentPassword.setText("");
-        etNewPassword.setText("");
-        etConfirmPassword.setText("");
+                    // Clear password fields
+                    etCurrentPassword.setText("");
+                    etNewPassword.setText("");
+                    etConfirmPassword.setText("");
+                });
+            }
+
+            @Override
+            public void onError(String error) {
+                runOnUiThread(() -> {
+                    showLoading(false);
+                    Toast.makeText(ProfileActivity.this, "Error: " + error, Toast.LENGTH_LONG).show();
+                });
+            }
+        });
     }
 
     private void handleLogout() {
