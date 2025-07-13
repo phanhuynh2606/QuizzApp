@@ -326,7 +326,16 @@ public class QuizTakeActivity extends AppCompatActivity {
                 correctAnswers++;
             }
         }
-
+        double score = questions.size() > 0 ? (double) correctAnswers / questions.size() * 100 : 0;
+        Intent resultIntent = new Intent(this, QuizResultActivity.class);
+        resultIntent.putExtra("score", score);
+        resultIntent.putExtra("correct_answers", correctAnswers);
+        resultIntent.putExtra("total_questions", questions.size());
+        resultIntent.putExtra("quiz_title", quizTitle);
+        resultIntent.putExtra("questions", new ArrayList<>(questions));
+        resultIntent.putExtra("userAnswers", new HashMap<>(userAnswers));
+        startActivity(resultIntent);
+        finish();
     }
 
     @Override

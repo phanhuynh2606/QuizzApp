@@ -3,6 +3,8 @@ package com.example.quizzapp.models;
 import androidx.room.Entity;
 import androidx.room.PrimaryKey;
 
+import java.io.Serializable;
+
 /**
  * Model để lưu đáp án của User cho từng câu hỏi
  * - Tự sinh trong app khi user trả lời câu hỏi
@@ -11,7 +13,7 @@ import androidx.room.PrimaryKey;
  * - ID local auto-generate + serverId từ MongoDB
  */
 @Entity(tableName = "user_answers")
-public class UserAnswer {
+public class UserAnswer implements Serializable {
     @PrimaryKey(autoGenerate = true) // ID local tự sinh
     private int id;
 
