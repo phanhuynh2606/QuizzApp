@@ -4,6 +4,7 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Button;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
@@ -47,6 +48,7 @@ public class QuizAdapter extends RecyclerView.Adapter<QuizAdapter.QuizViewHolder
 
     static class QuizViewHolder extends RecyclerView.ViewHolder {
         private TextView tvTitle, tvDescription, tvSubject, tvQuestions, tvExamType;
+        private Button btnStartQuiz;
 
         public QuizViewHolder(@NonNull View itemView) {
             super(itemView);
@@ -55,6 +57,7 @@ public class QuizAdapter extends RecyclerView.Adapter<QuizAdapter.QuizViewHolder
             tvSubject = itemView.findViewById(R.id.tvSubject);
             tvQuestions = itemView.findViewById(R.id.tvQuestionCount);
             tvExamType = itemView.findViewById(R.id.tvExamLevel);
+            btnStartQuiz = itemView.findViewById(R.id.btnStartQuiz);
         }
 
         public void bind(Quiz quiz, OnQuizClickListener listener) {
@@ -69,7 +72,7 @@ public class QuizAdapter extends RecyclerView.Adapter<QuizAdapter.QuizViewHolder
                 tvExamType.setText("Unknown");
             }
 
-            itemView.setOnClickListener(v -> {
+            btnStartQuiz.setOnClickListener(v -> {
                 if (listener != null) {
                     listener.onQuizClick(quiz);
                 }
