@@ -38,61 +38,61 @@ public class QuizRepository {
     /**
      * Lấy danh sách tất cả quiz từ API
      */
-    public void getAllQuizzes(QuizListCallback callback) {
-        quizApiService.getAllQuizzes().enqueue(new Callback<ApiResponse<List<Quiz>>>() {
-            @Override
-            public void onResponse(Call<ApiResponse<List<Quiz>>> call, Response<ApiResponse<List<Quiz>>> response) {
-                if (response.isSuccessful() && response.body() != null && response.body().isSuccess()) {
-                    List<Quiz> quizzes = response.body().getData();
-
-                    // Cache quizzes vào database local
-                    cacheQuizzesToLocal(quizzes);
-
-                    Log.d(TAG, "Loaded " + quizzes.size() + " quizzes from API");
-                    callback.onSuccess(quizzes);
-                } else {
-                    String message = response.body() != null ? response.body().getMessage() : "Failed to load quizzes";
-
-                    // Thử lấy từ cache local nếu API thất bại
-                    loadQuizzesFromLocal(callback, message);
-                }
-            }
-
-            @Override
-            public void onFailure(Call<ApiResponse<List<Quiz>>> call, Throwable t) {
-                Log.e(TAG, "Get quizzes API call failed: " + t.getMessage());
-
-                // Thử lấy từ cache local khi không có internet
-                loadQuizzesFromLocal(callback, "No internet connection");
-            }
-        });
-    }
+//    public void getAllQuizzes(QuizListCallback callback) {
+//        quizApiService.getAllQuizzes().enqueue(new Callback<ApiResponse<List<Quiz>>>() {
+//            @Override
+//            public void onResponse(Call<ApiResponse<List<Quiz>>> call, Response<ApiResponse<List<Quiz>>> response) {
+//                if (response.isSuccessful() && response.body() != null && response.body().isSuccess()) {
+//                    List<Quiz> quizzes = response.body().getData();
+//
+//                    // Cache quizzes vào database local
+//                    cacheQuizzesToLocal(quizzes);
+//
+//                    Log.d(TAG, "Loaded " + quizzes.size() + " quizzes from API");
+//                    callback.onSuccess(quizzes);
+//                } else {
+//                    String message = response.body() != null ? response.body().getMessage() : "Failed to load quizzes";
+//
+//                    // Thử lấy từ cache local nếu API thất bại
+//                    loadQuizzesFromLocal(callback, message);
+//                }
+//            }
+//
+//            @Override
+//            public void onFailure(Call<ApiResponse<List<Quiz>>> call, Throwable t) {
+//                Log.e(TAG, "Get quizzes API call failed: " + t.getMessage());
+//
+//                // Thử lấy từ cache local khi không có internet
+//                loadQuizzesFromLocal(callback, "No internet connection");
+//            }
+//        });
+//    }
 
     /**
      * Lấy quiz theo ID từ API
      */
-    public void getQuizById(String quizId, QuizCallback callback) {
-        quizApiService.getQuizById(quizId).enqueue(new Callback<ApiResponse<Quiz>>() {
-            @Override
-            public void onResponse(Call<ApiResponse<Quiz>> call, Response<ApiResponse<Quiz>> response) {
-                if (response.isSuccessful() && response.body() != null && response.body().isSuccess()) {
-                    Quiz quiz = response.body().getData();
-
-                    Log.d(TAG, "Loaded quiz: " + quiz.getTitle());
-                    callback.onSuccess(quiz);
-                } else {
-                    String message = response.body() != null ? response.body().getMessage() : "Quiz not found";
-                    callback.onError(message);
-                }
-            }
-
-            @Override
-            public void onFailure(Call<ApiResponse<Quiz>> call, Throwable t) {
-                Log.e(TAG, "Get quiz by ID API call failed: " + t.getMessage());
-                callback.onError("Network error. Please check your connection.");
-            }
-        });
-    }
+//    public void getQuizById(String quizId, QuizCallback callback) {
+//        quizApiService.getQuizById(quizId).enqueue(new Callback<ApiResponse<Quiz>>() {
+//            @Override
+//            public void onResponse(Call<ApiResponse<Quiz>> call, Response<ApiResponse<Quiz>> response) {
+//                if (response.isSuccessful() && response.body() != null && response.body().isSuccess()) {
+//                    Quiz quiz = response.body().getData();
+//
+//                    Log.d(TAG, "Loaded quiz: " + quiz.getTitle());
+//                    callback.onSuccess(quiz);
+//                } else {
+//                    String message = response.body() != null ? response.body().getMessage() : "Quiz not found";
+//                    callback.onError(message);
+//                }
+//            }
+//
+//            @Override
+//            public void onFailure(Call<ApiResponse<Quiz>> call, Throwable t) {
+//                Log.e(TAG, "Get quiz by ID API call failed: " + t.getMessage());
+//                callback.onError("Network error. Please check your connection.");
+//            }
+//        });
+//    }
 
     /**
      * Lấy quiz theo subject

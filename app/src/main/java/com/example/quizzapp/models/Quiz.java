@@ -5,45 +5,52 @@ import androidx.room.PrimaryKey;
 import androidx.room.Ignore;
 import androidx.annotation.NonNull;
 
-/**
- * Model để chứa dữ liệu Quiz từ API
- * - Lấy từ server qua API /quizzes
- * - Lưu vào SQLite để xem offline
- * - ID từ MongoDB ObjectId (String)
- */
+import com.google.gson.annotations.SerializedName;
+
+import java.util.Date;
+
 @Entity(tableName = "quizzes")
 public class Quiz {
-    @PrimaryKey // MongoDB ObjectId từ server API
+    @PrimaryKey
     @NonNull
-    private String id; // "_id": "64f8a1b2c3d4e5f6789012ab"
+
+    @SerializedName("_id")
+    private String id;
+
+    private String examCode;
     private String title;
     private String description;
-    private String subject;
+    private String subjectCode;
     private int totalQuestions;
-    private int timeLimit; // in minutes
-    private String difficulty;
-    private long createdAt;
+    private int timeLimit;
+
+    @SerializedName("examTypeId")
+    private ExamType examType;
+    private Date createdAt;
     private boolean isActive;
 
     public Quiz() {}
 
-    // Constructor cho dữ liệu từ API
     @Ignore
-    public Quiz(String id, String title, String description, String subject,
-                int totalQuestions, int timeLimit, String difficulty) {
-        this.id = id; // MongoDB ObjectId từ server
+    public Quiz( String examCode,String id, String title, String description, String subjectCode,
+                int totalQuestions, int timeLimit, ExamType examType) {
+        this.examCode = examCode;
+        this.id = id;
         this.title = title;
         this.description = description;
-        this.subject = subject;
+        this.subjectCode = subjectCode;
         this.totalQuestions = totalQuestions;
         this.timeLimit = timeLimit;
-        this.difficulty = difficulty;
-        this.createdAt = System.currentTimeMillis();
+        this.examType = examType;
+        this.createdAt = new Date(); // tạo đối tượng Date hiện tại
         this.isActive = true;
     }
 
     // Getters and setters
-    public String getId() { return id; } // Đổi từ int sang String
+
+    public String getExamCode() { return examCode; }
+    public void setExamCode(String examCode) { this.examCode = examCode; }
+    public String getId() { return id; }
     public void setId(String id) { this.id = id; }
 
     public String getTitle() { return title; }
@@ -52,8 +59,8 @@ public class Quiz {
     public String getDescription() { return description; }
     public void setDescription(String description) { this.description = description; }
 
-    public String getSubject() { return subject; }
-    public void setSubject(String subject) { this.subject = subject; }
+    public String getSubjectCode() { return subjectCode; }
+    public void setSubjectCode(String subjectCode) { this.subjectCode = subjectCode; }
 
     public int getTotalQuestions() { return totalQuestions; }
     public void setTotalQuestions(int totalQuestions) { this.totalQuestions = totalQuestions; }
@@ -61,12 +68,14 @@ public class Quiz {
     public int getTimeLimit() { return timeLimit; }
     public void setTimeLimit(int timeLimit) { this.timeLimit = timeLimit; }
 
-    public String getDifficulty() { return difficulty; }
-    public void setDifficulty(String difficulty) { this.difficulty = difficulty; }
+    public ExamType getExamType() { return examType; }
+    public void setExamType(ExamType examType) { this.examType = examType; }
 
-    public long getCreatedAt() { return createdAt; }
-    public void setCreatedAt(long createdAt) { this.createdAt = createdAt; }
+    public Date getCreatedAt() { return createdAt; } // sửa kiểu trả về thành Date
+    public void setCreatedAt(Date createdAt) { this.createdAt = createdAt; }
 
     public boolean isActive() { return isActive; }
     public void setActive(boolean active) { isActive = active; }
 }
+
+

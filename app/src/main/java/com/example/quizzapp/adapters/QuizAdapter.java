@@ -1,5 +1,6 @@
 package com.example.quizzapp.adapters;
 
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -45,23 +46,28 @@ public class QuizAdapter extends RecyclerView.Adapter<QuizAdapter.QuizViewHolder
     }
 
     static class QuizViewHolder extends RecyclerView.ViewHolder {
-        private TextView tvTitle, tvDescription, tvSubject, tvQuestions, tvDifficulty;
+        private TextView tvTitle, tvDescription, tvSubject, tvQuestions, tvExamType;
 
         public QuizViewHolder(@NonNull View itemView) {
             super(itemView);
-            tvTitle = itemView.findViewById(R.id.tvQuizTitle); // Fixed: use correct ID
+            tvTitle = itemView.findViewById(R.id.tvQuizTitle);
             tvDescription = itemView.findViewById(R.id.tvDescription);
             tvSubject = itemView.findViewById(R.id.tvSubject);
-            tvQuestions = itemView.findViewById(R.id.tvQuestionCount); // Fixed: use correct ID
-            tvDifficulty = itemView.findViewById(R.id.tvDifficulty);
+            tvQuestions = itemView.findViewById(R.id.tvQuestionCount);
+            tvExamType = itemView.findViewById(R.id.tvExamLevel);
         }
 
         public void bind(Quiz quiz, OnQuizClickListener listener) {
-            tvTitle.setText(quiz.getTitle());
+            tvTitle.setText(quiz.getExamCode());
             tvDescription.setText(quiz.getDescription());
-            tvSubject.setText(quiz.getSubject());
+            tvSubject.setText(quiz.getSubjectCode());
             tvQuestions.setText(quiz.getTotalQuestions() + " questions");
-            tvDifficulty.setText(quiz.getDifficulty());
+            Log.d("QuizAdapter", "ExamType = " + quiz.getExamType());
+            if (quiz.getExamType() != null) {
+                tvExamType.setText(quiz.getExamType().getTypeName());
+            } else {
+                tvExamType.setText("Unknown");
+            }
 
             itemView.setOnClickListener(v -> {
                 if (listener != null) {

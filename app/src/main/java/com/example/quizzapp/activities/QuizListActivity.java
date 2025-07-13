@@ -26,6 +26,8 @@ public class QuizListActivity extends AppCompatActivity {
     private QuizRepository repository;
     private List<Quiz> quizzes;
 
+    private  String subjectId;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -56,7 +58,13 @@ public class QuizListActivity extends AppCompatActivity {
     }
 
     private void loadQuizzes() {
-        repository.getAllQuizzes(new QuizRepository.QuizListCallback() {
+        subjectId = getIntent().getStringExtra("subject_id");
+        if (subjectId == null) {
+            Toast.makeText(this, "Subject ID not found", Toast.LENGTH_SHORT).show();
+            finish();
+            return;
+        }
+        repository.getQuizzesBySubject(subjectId, new QuizRepository.QuizListCallback() {
             @Override
             public void onSuccess(List<Quiz> quizList) {
                 runOnUiThread(() -> {
@@ -78,7 +86,7 @@ public class QuizListActivity extends AppCompatActivity {
     private void onQuizClicked(Quiz quiz) {
         Intent intent = new Intent(this, QuizTakeActivity.class);
         intent.putExtra("quiz_id", quiz.getId());
-        intent.putExtra("quiz_title", quiz.getTitle());
+        intent.putExtra("quiz_title", quiz.getExamCode());
         startActivity(intent);
     }
 

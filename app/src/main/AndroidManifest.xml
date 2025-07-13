@@ -54,6 +54,12 @@
             android:name=".activities.QuizListActivity"
             android:exported="false" />
 
+        <activity android:name=".activities.SemesterActivity"
+            android:exported="false"/>
+
+        <activity android:name=".activities.SubjectActivity"
+            android:exported="false"/>
+
         <activity
             android:name=".activities.QuizTakeActivity"
             android:exported="false" />

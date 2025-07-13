@@ -84,7 +84,7 @@
                 app:drawableStartCompat="@drawable/ic_quiz" />
 
             <TextView
-                android:id="@+id/tvDifficulty"
+                android:id="@+id/tvExamLevel"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
