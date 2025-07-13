@@ -43,6 +43,14 @@ public class ApiClient {
         return authApiService;
     }
 
+    public static SemesterApiService getSemesterService(Context context) {
+        return getRetrofitInstance(context).create(SemesterApiService.class);
+    }
+
+    public static SubjectApiService getSubjectService(Context context) {
+        return getRetrofitInstance(context).create(SubjectApiService.class);
+    }
+
     // Deprecated methods for backward compatibility
     @Deprecated
     public static Retrofit getRetrofitInstance() {
@@ -62,5 +70,14 @@ public class ApiClient {
     @Deprecated
     public static QuizApiService getApiService() {
         throw new IllegalStateException("Use getQuizApiService(Context) instead");
+    }
+
+    @Deprecated
+    public static SemesterApiService getSemesterService() {
+        throw new IllegalStateException("Use getSemesterService(Context) instead");
+    }
+    @Deprecated
+    public static SubjectApiService getSubjectService() {
+        throw new IllegalStateException("Use getSubjectService(Context) instead");
     }
 }

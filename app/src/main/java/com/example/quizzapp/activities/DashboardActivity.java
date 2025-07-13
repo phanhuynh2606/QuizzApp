@@ -33,7 +33,7 @@ public class DashboardActivity extends AppCompatActivity {
         quizRepository = new QuizRepository(this); // Khởi tạo QuizRepository
         setupToolbar();
         loadUserData();
-       // setupClickListeners();
+        setupClickListeners();
     }
 
     private void initViews() {
@@ -86,11 +86,12 @@ public class DashboardActivity extends AppCompatActivity {
         }).start();
     }
 
-//    private void setupClickListeners() {
-//        btnTakeQuiz.setOnClickListener(v -> {
-//            Intent intent = new Intent(DashboardActivity.this, QuizListActivity.class);
-//            startActivity(intent);
-//        });
+    private void setupClickListeners() {
+        btnTakeQuiz.setOnClickListener(v -> {
+            Intent intent = new Intent(DashboardActivity.this, SemesterActivity.class);
+            startActivity(intent);
+        });
+        }
 //
 //        btnViewHistory.setOnClickListener(v -> {
 //            Intent intent = new Intent(DashboardActivity.this, HistoryActivity.class);

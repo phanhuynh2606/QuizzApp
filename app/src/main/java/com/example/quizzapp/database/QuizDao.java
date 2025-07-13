@@ -34,10 +34,10 @@ public interface QuizDao {
     @Query("SELECT * FROM quizzes WHERE isActive = 1 ORDER BY createdAt DESC")
     List<Quiz> getAllActiveQuizzes();
 
-    @Query("SELECT * FROM quizzes WHERE subject = :subject AND isActive = 1 ORDER BY createdAt DESC")
+    @Query("SELECT * FROM quizzes WHERE subjectCode = :subject AND isActive = 1 ORDER BY createdAt DESC")
     List<Quiz> getQuizzesBySubject(String subject);
 
-    @Query("SELECT DISTINCT subject FROM quizzes WHERE isActive = 1")
+    @Query("SELECT DISTINCT subjectCode FROM quizzes WHERE isActive = 1")
     List<String> getAllSubjects();
 
     @Query("SELECT * FROM quizzes ORDER BY createdAt DESC")
