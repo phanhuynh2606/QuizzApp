@@ -1,6 +1,7 @@
 package com.example.quizzapp.api;
 
 
+import com.example.quizzapp.models.Question;
 import com.example.quizzapp.models.Quiz;
 import com.example.quizzapp.models.api.ApiResponse;
 
@@ -22,6 +23,9 @@ public interface QuizApiService {
 
     @GET("student/exams/{subjectId}")
     Call<ApiResponse<List<Quiz>>> getQuizzesBySubject(@Path("subjectId") String subject);
+
+    @GET("student/questions/{subjectCode}")
+    Call<ApiResponse<List<Question>>> getQuestionsBySubject(@Path("subjectCode") String subjectCode);
 
 //    @GET("quizzes/seme/{authorId}")
 //    Call<ApiResponse<List<Quiz>>> getQuizzesByAuthor(@Path("authorId") String authorId);

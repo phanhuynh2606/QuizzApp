@@ -89,4 +89,8 @@
     <string name="success_register">Registration successful!</string>
     <string name="success_quiz_completed">Quiz completed successfully!</string>
     <string name="success_sync">Data synchronized successfully!</string>
+
+    <!--    format-->
+    <string name="option_format"> %1$s) %2$s</string>
+
 </resources>
