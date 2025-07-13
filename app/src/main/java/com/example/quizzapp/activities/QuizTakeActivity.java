@@ -43,11 +43,9 @@ public class QuizTakeActivity extends AppCompatActivity {
     private Button btnPrevious, btnNext, btnSubmit;
     private TextView tvAnsweredQuestions;
     private TextView tvRemainingTime;
-
-    // Data
     private QuestionRepository questionRepository;
     private List<Question> questions;
-    private Map<Integer, String> userAnswers; // Map question index to selected answer
+    private Map<Integer, String> userAnswers;
     private int currentQuestionIndex = 0;
     private String subjectCode;
     private String quizTitle;
@@ -150,13 +148,8 @@ public class QuizTakeActivity extends AppCompatActivity {
     }
 
     private void setupQuiz() {
-        // Start timer
         startTimer();
-
-        // Display first question
         displayQuestion();
-
-        // Update UI
         updateProgress();
         updateAnsweredCount();
         updateNavigationButtons();
@@ -192,17 +185,14 @@ public class QuizTakeActivity extends AppCompatActivity {
         if (currentQuestionIndex >= 0 && currentQuestionIndex < questions.size()) {
             Question question = questions.get(currentQuestionIndex);
             radioGroup.clearCheck();
-            // Display question
+
             tvQuestion.setText(question.getQuestionText());
             String optionFormat = getString(R.string.option_format);
 
-            // Display options
             rbOptionA.setText(String.format(optionFormat, "A", question.getOptions().get(0).getText()));
             rbOptionB.setText(String.format(optionFormat, "B", question.getOptions().get(1).getText()));
             rbOptionC.setText(String.format(optionFormat, "C", question.getOptions().get(2).getText()));
             rbOptionD.setText(String.format(optionFormat, "D", question.getOptions().get(3).getText()));
-
-            // Restore saved answer if exists
 
             String savedAnswer = userAnswers.get(currentQuestionIndex);
             if (savedAnswer != null) {
@@ -299,6 +289,8 @@ public class QuizTakeActivity extends AppCompatActivity {
     }
 
     private void showSubmitDialog() {
+        saveCurrentAnswer();
+
         int answeredCount = userAnswers.size();
         int totalCount = questions.size();
 
@@ -315,6 +307,7 @@ public class QuizTakeActivity extends AppCompatActivity {
     }
 
     private void submitQuiz() {
+        saveCurrentAnswer();
         if (countDownTimer != null) {
             countDownTimer.cancel();
         }
@@ -327,6 +320,8 @@ public class QuizTakeActivity extends AppCompatActivity {
             }
         }
         double score = questions.size() > 0 ? (double) correctAnswers / questions.size() * 100 : 0;
+        long durationInMillis = QUIZ_DURATION - timeLeftInMillis;
+
         Intent resultIntent = new Intent(this, QuizResultActivity.class);
         resultIntent.putExtra("score", score);
         resultIntent.putExtra("correct_answers", correctAnswers);
@@ -334,6 +329,8 @@ public class QuizTakeActivity extends AppCompatActivity {
         resultIntent.putExtra("quiz_title", quizTitle);
         resultIntent.putExtra("questions", new ArrayList<>(questions));
         resultIntent.putExtra("userAnswers", new HashMap<>(userAnswers));
+        resultIntent.putExtra("duration", durationInMillis);
+
         startActivity(resultIntent);
         finish();
     }

@@ -14,6 +14,7 @@ import com.example.quizzapp.models.Question;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Locale;
 
 public class QuizResultActivity extends AppCompatActivity {
 
@@ -54,8 +55,12 @@ public class QuizResultActivity extends AppCompatActivity {
         int correctAnswers = intent.getIntExtra("correct_answers", 0);
         int totalQuestions = intent.getIntExtra("total_questions", 0);
         String quizTitle = intent.getStringExtra("quiz_title");
+        long durationInMillis = getIntent().getLongExtra("duration", 0);
+        int minutes = (int) (durationInMillis / 1000) / 60;
+        int seconds = (int) (durationInMillis / 1000) % 60;
+        String durationFormatted = String.format(Locale.getDefault(), "%02d:%02d", minutes, seconds);
         questions = (ArrayList<Question>) getIntent().getSerializableExtra("questions");
-        userAnswers= (HashMap<Integer, String>) getIntent().getSerializableExtra("userAnswers");        // Set quiz title
+        userAnswers= (HashMap<Integer, String>) getIntent().getSerializableExtra("userAnswers");
         tvQuizTitle.setText(quizTitle != null ? quizTitle : "Quiz");
 
         // Set score
@@ -66,12 +71,12 @@ public class QuizResultActivity extends AppCompatActivity {
         // Correct answers
         tvCorrectAnswers.setText(String.format("Correct: %d/%d", correctAnswers, totalQuestions));
 
-        // Total points (fake points example: score out of 100)
+        // Total points
         int pointScore = (int) score;
         tvTotalPoints.setText(String.format("Points: %d/100", pointScore));
 
-        // Duration (fake value for now, you can pass actual duration if needed)
-        tvDuration.setText("15:00");
+        // Duration
+        tvDuration.setText(durationFormatted);
 
         // Total questions
         tvTotalQuestions.setText(String.valueOf(totalQuestions));
@@ -82,7 +87,10 @@ public class QuizResultActivity extends AppCompatActivity {
 
         // Button actions
         btnViewAnswers.setOnClickListener(v -> {
-
+            Intent viewIntent = new Intent(QuizResultActivity.this, ViewAnswersActivity.class);
+            viewIntent.putExtra("questions", new ArrayList<>(questions));
+            viewIntent.putExtra("userAnswers", new HashMap<>(userAnswers));
+            startActivity(viewIntent);
         });
 
         btnRetakeQuiz.setOnClickListener(v -> {
@@ -90,7 +98,6 @@ public class QuizResultActivity extends AppCompatActivity {
         });
 
         btnBackToQuizList.setOnClickListener(v -> {
-            // Return to quiz list (main activity)
             Intent backIntent = new Intent(QuizResultActivity.this, QuizListActivity.class);
             backIntent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK);
             startActivity(backIntent);

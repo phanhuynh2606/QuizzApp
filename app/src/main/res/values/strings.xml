@@ -91,6 +91,6 @@
     <string name="success_sync">Data synchronized successfully!</string>
 
     <!--    format-->
-    <string name="option_format"> %1$s) %2$s</string>
+    <string name="option_format"> %1$s. %2$s</string>
 
 </resources>

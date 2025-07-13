@@ -1,0 +1,89 @@
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#FFFFFF"
+    android:padding="16dp">
+
+    <!-- Layout chứa nội dung câu hỏi và đáp án -->
+    <LinearLayout
+        android:id="@+id/layoutContent"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignParentTop="true"
+        android:orientation="vertical">
+
+        <TextView
+            android:id="@+id/tvQuestion"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Question text"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            android:textColor="#212121"
+            android:fontFamily="sans-serif-medium" />
+
+        <TextView
+            android:id="@+id/tvOptions"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:text="Options"
+            android:textSize="16sp"
+            android:textColor="#424242"
+            android:fontFamily="sans-serif" />
+
+        <TextView
+            android:id="@+id/tvYourAnswer"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:text="Your answer: A"
+            android:textSize="15sp"
+            android:textColor="#E53935"
+            android:fontFamily="sans-serif-italic" />
+
+    </LinearLayout>
+
+    <!-- Layout nút Previous & Next ngay dưới đáp án -->
+    <LinearLayout
+        android:id="@+id/layoutNavButtons"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/layoutContent"
+        android:layout_marginTop="20dp"
+        android:orientation="horizontal"
+        android:gravity="center">
+
+        <Button
+            android:id="@+id/btnPrevious"
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:layout_height="wrap_content"
+            android:layout_marginEnd="8dp"
+            android:text="Previous"
+            android:background="@drawable/bg_button_primary"
+            android:textColor="@android:color/white" />
+
+        <Button
+            android:id="@+id/btnNext"
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:layout_height="wrap_content"
+            android:text="Next"
+            android:background="@drawable/bg_button_primary"
+            android:textColor="@android:color/white" />
+    </LinearLayout>
+
+    <!-- Nút Home nằm dưới cùng -->
+    <Button
+        android:id="@+id/btnBackHome"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:layout_marginTop="16dp"
+        android:layout_marginBottom="31dp"
+        android:background="@drawable/bg_button_primary"
+        android:text="Home"
+        android:textColor="@android:color/white" />
+
+</RelativeLayout>
