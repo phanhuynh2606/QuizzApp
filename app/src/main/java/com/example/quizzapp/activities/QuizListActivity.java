@@ -88,6 +88,7 @@ public class QuizListActivity extends AppCompatActivity {
         intent.putExtra("quiz_id", quiz.getId());
         intent.putExtra("quiz_title", quiz.getExamCode());
         intent.putExtra("subject_code", quiz.getSubjectCode());
+        intent.putExtra("examType", quiz.getExamType().getTypeCode());
         startActivity(intent);
     }
 

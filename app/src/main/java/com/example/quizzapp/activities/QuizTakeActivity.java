@@ -1,8 +1,15 @@
 package com.example.quizzapp.activities;
 
+import android.content.BroadcastReceiver;
+import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.os.Bundle;
 import android.os.CountDownTimer;
+import android.os.Handler;
+import android.os.Looper;
 import android.util.Log;
 import android.view.MenuItem;
 import android.view.View;
@@ -18,8 +25,12 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 
 import com.example.quizzapp.R;
+import com.example.quizzapp.models.AnswerRequest;
+import com.example.quizzapp.models.PracticeHistory;
 import com.example.quizzapp.models.Question;
+import com.example.quizzapp.models.QuizState;
 import com.example.quizzapp.repository.QuestionRepository;
+import com.example.quizzapp.repository.QuizStateRepository;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -30,6 +41,8 @@ import java.util.Map;
 public class QuizTakeActivity extends AppCompatActivity {
     private static final String TAG = "QuizTakeActivity";
     private static final long QUIZ_DURATION = 15 * 60 * 1000; // 15 phút
+    private static final long AUTO_SAVE_INTERVAL = 10 * 1000;
+    private static final long NETWORK_CHECK_INTERVAL = 5 * 1000;
 
     // Views
     private TextView tvQuizTitle;
@@ -43,14 +56,36 @@ public class QuizTakeActivity extends AppCompatActivity {
     private Button btnPrevious, btnNext, btnSubmit;
     private TextView tvAnsweredQuestions;
     private TextView tvRemainingTime;
+    private TextView tvNetworkStatus;
+
+    // Data
     private QuestionRepository questionRepository;
+    private QuizStateRepository quizStateRepository;
     private List<Question> questions;
     private Map<Integer, String> userAnswers;
     private int currentQuestionIndex = 0;
     private String subjectCode;
+    private String examId;
     private String quizTitle;
+    private String quizId;
+    private String examTypeCode;
+    private String startTime;
+
+    // Timers and handlers
     private CountDownTimer countDownTimer;
+    private Handler autoSaveHandler;
+    private Handler networkCheckHandler;
     private long timeLeftInMillis = QUIZ_DURATION;
+
+    // State management
+    private boolean isQuizCompleted = false;
+    private boolean hasUnsavedChanges = false;
+    private boolean isNetworkAvailable = true;
+    private boolean isResumedQuiz = false;
+    private long lastSaveTime = 0;
+
+    // Network monitoring
+    private NetworkChangeReceiver networkReceiver;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -60,7 +95,13 @@ public class QuizTakeActivity extends AppCompatActivity {
         initViews();
         setupToolbar();
         initData();
-        loadQuestions();
+        setupNetworkMonitoring();
+
+        // Khởi tạo repository
+        quizStateRepository = new QuizStateRepository(this);
+
+        // Kiểm tra quiz đang lưu trước khi load câu hỏi mới
+        checkForResumableQuiz();
     }
 
     private void initViews() {
@@ -80,6 +121,7 @@ public class QuizTakeActivity extends AppCompatActivity {
         btnSubmit = findViewById(R.id.btnSubmit);
         tvAnsweredQuestions = findViewById(R.id.tvAnsweredQuestions);
         tvRemainingTime = findViewById(R.id.tvRemainingTime);
+        tvNetworkStatus = findViewById(R.id.tv_network_status);
 
         // Set click listeners
         btnPrevious.setOnClickListener(v -> previousQuestion());
@@ -104,10 +146,18 @@ public class QuizTakeActivity extends AppCompatActivity {
         questions = new ArrayList<>();
         userAnswers = new HashMap<>();
 
+        // Khởi tạo handlers
+        autoSaveHandler = new Handler(Looper.getMainLooper());
+        networkCheckHandler = new Handler(Looper.getMainLooper());
+
         // Get data from intent
         Intent intent = getIntent();
+        examId = intent.getStringExtra("quiz_id");
         subjectCode = intent.getStringExtra("subject_code");
         quizTitle = intent.getStringExtra("quiz_title");
+        examTypeCode = intent.getStringExtra("examType");
+        quizId = generateStateId();
+
         if (subjectCode == null) {
             Toast.makeText(this, "Subject code not found", Toast.LENGTH_SHORT).show();
             finish();
@@ -117,6 +167,131 @@ public class QuizTakeActivity extends AppCompatActivity {
         if (quizTitle != null) {
             tvQuizTitle.setText(quizTitle);
         }
+    }
+
+    private void setupNetworkMonitoring() {
+        networkReceiver = new NetworkChangeReceiver();
+        IntentFilter filter = new IntentFilter(ConnectivityManager.CONNECTIVITY_ACTION);
+        registerReceiver(networkReceiver, filter);
+
+        // Kiểm tra mạng định kỳ
+        startNetworkCheck();
+    }
+
+    private void startNetworkCheck() {
+        networkCheckHandler.postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                checkNetworkStatus();
+                if (!isQuizCompleted) {
+                    networkCheckHandler.postDelayed(this, NETWORK_CHECK_INTERVAL);
+                }
+            }
+        }, NETWORK_CHECK_INTERVAL);
+    }
+
+    private void checkNetworkStatus() {
+        ConnectivityManager cm = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
+        NetworkInfo activeNetwork = cm.getActiveNetworkInfo();
+        boolean isConnected = activeNetwork != null && activeNetwork.isConnectedOrConnecting();
+
+        if (isConnected != isNetworkAvailable) {
+            isNetworkAvailable = isConnected;
+            updateNetworkStatusUI();
+
+            if (isConnected && hasUnsavedChanges) {
+                // Khi có mạng trở lại, lưu ngay
+                saveQuizStateIfNeeded();
+            }
+        }
+    }
+
+    private void updateNetworkStatusUI() {
+        if (tvNetworkStatus != null) {
+            if (isNetworkAvailable) {
+                tvNetworkStatus.setText("Online");
+                tvNetworkStatus.setTextColor(getResources().getColor(android.R.color.holo_green_dark));
+            } else {
+                tvNetworkStatus.setText("Offline - Data saved locally");
+                tvNetworkStatus.setTextColor(getResources().getColor(android.R.color.holo_orange_dark));
+            }
+        }
+    }
+
+    private void checkForResumableQuiz() {
+        // Cleanup expired states trước
+        quizStateRepository.cleanupExpiredStates(new QuizStateRepository.DeleteCallback() {
+            @Override
+            public void onSuccess() {
+                checkValidQuizState();
+            }
+
+            @Override
+            public void onError(String error) {
+                Log.e(TAG, "Error cleaning up: " + error);
+                checkValidQuizState();
+            }
+        });
+    }
+
+    private void checkValidQuizState() {
+        quizStateRepository.hasValidQuizState(subjectCode, new QuizStateRepository.LoadCallback() {
+            @Override
+            public void onSuccess(QuizState quizState) {
+                runOnUiThread(() -> {
+                    if (quizState != null && quizState.hasTimeLeft()) {
+                        showResumeDialog(quizState);
+                    } else {
+                        loadQuestions();
+                    }
+                });
+            }
+
+            @Override
+            public void onError(String error) {
+                runOnUiThread(() -> {
+                    Log.e(TAG, "Error checking quiz state: " + error);
+                    loadQuestions();
+                });
+            }
+        });
+    }
+
+    private void showResumeDialog(QuizState savedState) {
+        String message = String.format(Locale.getDefault(),
+                "You have an unfinished quiz:\n" +
+                        "• Subject: %s\n" +
+                        "• Question: %d\n" +
+                        "• Answered: %d questions\n" +
+                        "• Time left: %s\n\n" +
+                        "Do you want to continue where you left off?",
+                savedState.getSubjectCode(),
+                savedState.getCurrentQuestionIndex() + 1,
+                savedState.getAnsweredCount(),
+                savedState.getFormattedTimeLeft());
+
+        new AlertDialog.Builder(this)
+                .setTitle("Resume Quiz")
+                .setMessage(message)
+                .setPositiveButton("Resume", (dialog, which) -> {
+                    isResumedQuiz = true;
+                    restoreFromState(savedState);
+                })
+                .setNegativeButton("Start New", (dialog, which) -> {
+                    deleteCurrentQuizState();
+                    loadQuestions();
+                })
+                .setCancelable(false)
+                .show();
+    }
+
+    private void restoreFromState(QuizState savedState) {
+        currentQuestionIndex = savedState.getCurrentQuestionIndex();
+        timeLeftInMillis = savedState.getTimeLeftInMillis();
+        userAnswers = new HashMap<>(savedState.getUserAnswers());
+
+        Toast.makeText(this, "Quiz resumed successfully", Toast.LENGTH_SHORT).show();
+        loadQuestions();
     }
 
     private void loadQuestions() {
@@ -146,13 +321,54 @@ public class QuizTakeActivity extends AppCompatActivity {
             }
         });
     }
+    private void savePracticeHistory(String examId, String subjectCode, String examTypeCode, String userSessionId, String startTime, String endTime, int totalQuestions, int correctAnswers, double score,long timeSpent, List<AnswerRequest> answerList
+    ) {
+        PracticeHistory practiceHistory = new PracticeHistory(
+                examId,
+                subjectCode,
+                examTypeCode,
+                userSessionId,
+                startTime,
+                endTime,
+                totalQuestions,
+                correctAnswers,
+                score,
+                timeSpent,
+                answerList,
+                true
+        );
+
+        questionRepository.savePracticeHistory(practiceHistory, new QuestionRepository.SaveCallback() {
+            @Override
+            public void onSuccess() {
+                runOnUiThread(() -> {
+                    Log.d(TAG, "Saved practice history successfully");
+                });
+            }
+
+            @Override
+            public void onError(String error) {
+                runOnUiThread(() -> {
+                    Toast.makeText(QuizTakeActivity.this, "Failed to save history: " + error, Toast.LENGTH_SHORT).show();
+                });
+            }
+        });
+    }
 
     private void setupQuiz() {
+        startTime = getCurrentTimeISO();
         startTimer();
         displayQuestion();
         updateProgress();
         updateAnsweredCount();
         updateNavigationButtons();
+        startAutoSave();
+        updateNetworkStatusUI();
+
+        // Lưu state ban đầu nếu là quiz mới
+        if (!isResumedQuiz) {
+            saveQuizStateIfNeeded();
+        }
     }
 
     private void startTimer() {
@@ -161,15 +377,27 @@ public class QuizTakeActivity extends AppCompatActivity {
             public void onTick(long millisUntilFinished) {
                 timeLeftInMillis = millisUntilFinished;
                 updateTimerDisplay();
+                hasUnsavedChanges = true;
             }
 
             @Override
             public void onFinish() {
-                // Time's up - auto submit
                 Toast.makeText(QuizTakeActivity.this, "Time's up! Quiz submitted automatically.", Toast.LENGTH_SHORT).show();
                 submitQuiz();
             }
         }.start();
+    }
+
+    private void startAutoSave() {
+        autoSaveHandler.postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                if (!isQuizCompleted) {
+                    saveQuizStateIfNeeded();
+                    autoSaveHandler.postDelayed(this, AUTO_SAVE_INTERVAL);
+                }
+            }
+        }, AUTO_SAVE_INTERVAL);
     }
 
     private void updateTimerDisplay() {
@@ -211,7 +439,7 @@ public class QuizTakeActivity extends AppCompatActivity {
                         break;
                 }
             }
-            // Update question number
+
             tvQuestionNumber.setText(String.format(Locale.getDefault(),
                     "Question %d of %d", currentQuestionIndex + 1, questions.size()));
         }
@@ -228,7 +456,43 @@ public class QuizTakeActivity extends AppCompatActivity {
 
             userAnswers.put(currentQuestionIndex, answer);
             updateAnsweredCount();
+            hasUnsavedChanges = true;
         }
+    }
+
+    private void saveQuizStateIfNeeded() {
+        if (isQuizCompleted || !hasUnsavedChanges) return;
+
+        //5s saved 1 lan
+        long currentTime = System.currentTimeMillis();
+        if (currentTime - lastSaveTime < 5000) {
+            return;
+        }
+
+        saveCurrentAnswer();
+
+        quizStateRepository.saveQuizState(
+                quizId,
+                subjectCode,
+                quizTitle,
+                currentQuestionIndex,
+                timeLeftInMillis,
+                userAnswers,
+                new QuizStateRepository.SaveCallback() {
+                    @Override
+                    public void onSuccess() {
+                        Log.d(TAG, "Quiz state saved successfully");
+                        hasUnsavedChanges = false;
+                        lastSaveTime = System.currentTimeMillis();
+                    }
+
+                    @Override
+                    public void onError(String error) {
+                        Log.e(TAG, "Error saving quiz state: " + error);
+                        // Giữ hasUnsavedChanges = true để thử lại lần sau
+                    }
+                }
+        );
     }
 
     private void previousQuestion() {
@@ -238,6 +502,7 @@ public class QuizTakeActivity extends AppCompatActivity {
             displayQuestion();
             updateProgress();
             updateNavigationButtons();
+            hasUnsavedChanges = true;
         }
     }
 
@@ -248,6 +513,7 @@ public class QuizTakeActivity extends AppCompatActivity {
             displayQuestion();
             updateProgress();
             updateNavigationButtons();
+            hasUnsavedChanges = true;
         }
     }
 
@@ -266,14 +532,11 @@ public class QuizTakeActivity extends AppCompatActivity {
     }
 
     private void updateNavigationButtons() {
-        // Previous button
         btnPrevious.setEnabled(currentQuestionIndex > 0);
 
-        // Next button
         boolean hasNext = currentQuestionIndex < questions.size() - 1;
         btnNext.setEnabled(hasNext);
 
-        // Submit button - show on last question or when all answered
         boolean isLastQuestion = currentQuestionIndex == questions.size() - 1;
         boolean allAnswered = userAnswers.size() == questions.size();
 
@@ -305,12 +568,28 @@ public class QuizTakeActivity extends AppCompatActivity {
                 .setNegativeButton("Cancel", null)
                 .show();
     }
-
+    private List<AnswerRequest> createAnswerList() {
+        List<AnswerRequest> answerList = new ArrayList<>();
+        for (int i = 0; i < questions.size(); i++) {
+            AnswerRequest answer = new AnswerRequest();
+            answer.setQuestionId(questions.get(i).getId());
+            answer.setSelectedAnswer(userAnswers.get(i));
+            answer.setCorrect(userAnswers.get(i) != null && userAnswers.get(i).equals(questions.get(i).getCorrectAnswerLetter()));
+            answerList.add(answer);
+        }
+        return answerList;
+    }
     private void submitQuiz() {
+        isQuizCompleted = true;
         saveCurrentAnswer();
+
         if (countDownTimer != null) {
             countDownTimer.cancel();
         }
+
+        // Xóa quiz state sau khi submit
+        deleteCurrentQuizState();
+
         // Calculate score
         int correctAnswers = 0;
         for (int i = 0; i < questions.size(); i++) {
@@ -319,6 +598,7 @@ public class QuizTakeActivity extends AppCompatActivity {
                 correctAnswers++;
             }
         }
+
         double score = questions.size() > 0 ? (double) correctAnswers / questions.size() * 100 : 0;
         long durationInMillis = QUIZ_DURATION - timeLeftInMillis;
 
@@ -330,9 +610,37 @@ public class QuizTakeActivity extends AppCompatActivity {
         resultIntent.putExtra("questions", new ArrayList<>(questions));
         resultIntent.putExtra("userAnswers", new HashMap<>(userAnswers));
         resultIntent.putExtra("duration", durationInMillis);
+        List<AnswerRequest> answerList = createAnswerList();
 
+        savePracticeHistory(
+                examId,
+                subjectCode,
+                examTypeCode,
+                quizId,
+                startTime,
+                getCurrentTimeISO(),
+                questions.size(),
+                correctAnswers,
+                score,
+                durationInMillis,
+                answerList
+        );
         startActivity(resultIntent);
         finish();
+    }
+
+    private void deleteCurrentQuizState() {
+        quizStateRepository.deleteQuizState(quizId, new QuizStateRepository.DeleteCallback() {
+            @Override
+            public void onSuccess() {
+                Log.d(TAG, "Quiz state deleted successfully");
+            }
+
+            @Override
+            public void onError(String error) {
+                Log.e(TAG, "Error deleting quiz state: " + error);
+            }
+        });
     }
 
     @Override
@@ -344,30 +652,92 @@ public class QuizTakeActivity extends AppCompatActivity {
         return super.onOptionsItemSelected(item);
     }
 
-//    @Override
-//    public void onBackPressed() {
-//        showExitDialog();
-//    }
+    @Override
+    public void onBackPressed() {
+        super.onBackPressed();
+        showExitDialog();
+    }
 
     private void showExitDialog() {
+        String message = hasUnsavedChanges ?
+                "Are you sure you want to exit? Your progress will be automatically saved and you can resume later." :
+                "Are you sure you want to exit?";
+
         new AlertDialog.Builder(this)
                 .setTitle("Exit Quiz")
-                .setMessage("Are you sure you want to exit? Your progress will be lost.")
+                .setMessage(message)
                 .setPositiveButton("Exit", (dialog, which) -> {
-                    if (countDownTimer != null) {
-                        countDownTimer.cancel();
+                    if (hasUnsavedChanges) {
+                        saveQuizStateIfNeeded();
                     }
                     finish();
                 })
                 .setNegativeButton("Cancel", null)
                 .show();
     }
+    private String getCurrentTimeISO() {
+        return java.time.OffsetDateTime.now(java.time.ZoneOffset.UTC).toString();
+    }
+    private String generateStateId() {
+        return subjectCode + "_quiz_state_";
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        // Lưu state khi app bị pause
+        saveQuizStateIfNeeded();
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        // Kiểm tra network status khi resume
+        checkNetworkStatus();
+    }
 
     @Override
     protected void onDestroy() {
         super.onDestroy();
+
+        // Cleanup timers
         if (countDownTimer != null) {
             countDownTimer.cancel();
+        }
+
+        if (autoSaveHandler != null) {
+            autoSaveHandler.removeCallbacksAndMessages(null);
+        }
+
+        if (networkCheckHandler != null) {
+            networkCheckHandler.removeCallbacksAndMessages(null);
+        }
+
+        // Unregister network receiver
+        if (networkReceiver != null) {
+            try {
+                unregisterReceiver(networkReceiver);
+            } catch (IllegalArgumentException e) {
+                Log.e(TAG, "Network receiver not registered", e);
+            }
+        }
+
+        // Shutdown repository
+        if (quizStateRepository != null) {
+            quizStateRepository.shutdown();
+        }
+
+        // Lưu state cuối cùng trước khi destroy
+        if (!isQuizCompleted && hasUnsavedChanges) {
+            saveQuizStateIfNeeded();
+        }
+    }
+
+    // Network change receiver
+    private class NetworkChangeReceiver extends BroadcastReceiver {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            checkNetworkStatus();
         }
     }
 }

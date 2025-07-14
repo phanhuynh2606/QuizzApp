@@ -7,13 +7,14 @@ import androidx.room.Room;
 import androidx.room.RoomDatabase;
 import androidx.room.TypeConverters;
 
+import com.example.quizzapp.models.QuizState;
 import com.example.quizzapp.models.User;
 import com.example.quizzapp.models.Quiz;
 import com.example.quizzapp.utils.Constants;
 import com.example.quizzapp.utils.Converters;
 
 @Database(
-        entities = {User.class, Quiz.class},
+        entities = {User.class, Quiz.class, QuizState.class},
         version = Constants.DATABASE_VERSION,
         exportSchema = false
 )
@@ -25,6 +26,8 @@ public abstract class QuizDatabase extends RoomDatabase {
 
     public abstract UserDao userDao();
     public abstract QuizDao quizDao();
+    public abstract QuizStateDao quizStateDao();
+
 
     public static synchronized QuizDatabase getInstance(Context context) {
         if (instance == null) {

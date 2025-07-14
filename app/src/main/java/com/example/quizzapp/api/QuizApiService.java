@@ -1,6 +1,7 @@
 package com.example.quizzapp.api;
 
 
+import com.example.quizzapp.models.PracticeHistory;
 import com.example.quizzapp.models.Question;
 import com.example.quizzapp.models.Quiz;
 import com.example.quizzapp.models.api.ApiResponse;
@@ -8,7 +9,9 @@ import com.example.quizzapp.models.api.ApiResponse;
 import java.util.List;
 
 import retrofit2.Call;
+import retrofit2.http.Body;
 import retrofit2.http.GET;
+import retrofit2.http.POST;
 import retrofit2.http.Path;
 
 /**
@@ -26,6 +29,9 @@ public interface QuizApiService {
 
     @GET("student/questions/{subjectCode}")
     Call<ApiResponse<List<Question>>> getQuestionsBySubject(@Path("subjectCode") String subjectCode);
+
+    @POST("student/exam/practice-history")
+    Call<ApiResponse<PracticeHistory>> savePracticeHistory(@Body PracticeHistory request);
 
 //    @GET("quizzes/seme/{authorId}")
 //    Call<ApiResponse<List<Quiz>>> getQuizzesByAuthor(@Path("authorId") String authorId);
