@@ -91,18 +91,17 @@ public class DashboardActivity extends AppCompatActivity {
             Intent intent = new Intent(DashboardActivity.this, SemesterActivity.class);
             startActivity(intent);
         });
-        }
-//
-//        btnViewHistory.setOnClickListener(v -> {
-//            Intent intent = new Intent(DashboardActivity.this, HistoryActivity.class);
-//            startActivity(intent);
-//        });
+        btnViewHistory.setOnClickListener(v -> {
+            Intent intent = new Intent(DashboardActivity.this, HistoryActivity.class);
+            intent.putExtra("userId", currentUser.getId());
+            startActivity(intent);
+        });
 //
 //        btnSyncData.setOnClickListener(v -> {
 //            // Implement sync functionality
 //            Toast.makeText(this, "Syncing data...", Toast.LENGTH_SHORT).show();
 //        });
-//    }
+    }
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {

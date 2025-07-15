@@ -29,6 +29,8 @@ import com.example.quizzapp.models.AnswerRequest;
 import com.example.quizzapp.models.PracticeHistory;
 import com.example.quizzapp.models.Question;
 import com.example.quizzapp.models.QuizState;
+import com.example.quizzapp.models.User;
+import com.example.quizzapp.repository.AuthRepository;
 import com.example.quizzapp.repository.QuestionRepository;
 import com.example.quizzapp.repository.QuizStateRepository;
 
@@ -70,6 +72,9 @@ public class QuizTakeActivity extends AppCompatActivity {
     private String quizId;
     private String examTypeCode;
     private String startTime;
+    private AuthRepository authRepository;
+    private User currentUser;
+
 
     // Timers and handlers
     private CountDownTimer countDownTimer;
@@ -96,10 +101,9 @@ public class QuizTakeActivity extends AppCompatActivity {
         setupToolbar();
         initData();
         setupNetworkMonitoring();
-
+        loadCurrentUser();
         // Khởi tạo repository
         quizStateRepository = new QuizStateRepository(this);
-
         // Kiểm tra quiz đang lưu trước khi load câu hỏi mới
         checkForResumableQuiz();
     }
@@ -140,9 +144,17 @@ public class QuizTakeActivity extends AppCompatActivity {
             }
         }
     }
-
+    private void loadCurrentUser() {
+        authRepository.getCurrentUser(user -> {
+            if (user != null) {
+                currentUser = user;
+            }
+        });
+    }
     private void initData() {
         questionRepository = new QuestionRepository(this);
+        authRepository = new AuthRepository(this);
+
         questions = new ArrayList<>();
         userAnswers = new HashMap<>();
 
@@ -616,13 +628,13 @@ public class QuizTakeActivity extends AppCompatActivity {
                 examId,
                 subjectCode,
                 examTypeCode,
-                quizId,
+                currentUser.getId(),
                 startTime,
                 getCurrentTimeISO(),
                 questions.size(),
                 correctAnswers,
                 score,
-                durationInMillis,
+                (int) (durationInMillis / 1000),
                 answerList
         );
         startActivity(resultIntent);

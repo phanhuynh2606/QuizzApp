@@ -2,6 +2,7 @@ package com.example.quizzapp.activities;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.util.Log;
 import android.widget.Button;
 import android.widget.TextView;
 
@@ -22,6 +23,9 @@ public class ViewAnswersActivity extends AppCompatActivity {
     private HashMap<Integer, String> userAnswers;
     private int currentIndex = 0;
 
+    private boolean isHistory = false;
+    private String userId;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -36,7 +40,8 @@ public class ViewAnswersActivity extends AppCompatActivity {
 
         questions = (ArrayList<Question>) getIntent().getSerializableExtra("questions");
         userAnswers = (HashMap<Integer, String>) getIntent().getSerializableExtra("userAnswers");
-
+        isHistory = getIntent().getBooleanExtra("isHistory", false);
+        userId = getIntent().getStringExtra("userId");
         displayQuestion();
 
         btnPrevious.setOnClickListener(v -> {
@@ -54,7 +59,8 @@ public class ViewAnswersActivity extends AppCompatActivity {
         });
 
         btnBackHome.setOnClickListener(v -> {
-            Intent intent = new Intent(ViewAnswersActivity.this, DashboardActivity.class);
+            Intent intent = new Intent(ViewAnswersActivity.this, isHistory ? HistoryActivity.class : DashboardActivity.class);
+            intent.putExtra("userId", userId);
             intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK);
             startActivity(intent);
             finish();
@@ -63,7 +69,6 @@ public class ViewAnswersActivity extends AppCompatActivity {
 
     private void displayQuestion() {
         if (questions == null || userAnswers == null) return;
-
         Question q = questions.get(currentIndex);
         String userAnswer = userAnswers.get(currentIndex);
         String correctAnswer = q.getCorrectAnswerLetter();
@@ -76,7 +81,7 @@ public class ViewAnswersActivity extends AppCompatActivity {
             String text = q.getOptions().get(i).getText();
 
             sb.append(letter).append(") ").append(text);
-
+            Log.d("letter", letter);
             if (letter.equals(correctAnswer)) {
                 sb.append(" ✅");
             }
