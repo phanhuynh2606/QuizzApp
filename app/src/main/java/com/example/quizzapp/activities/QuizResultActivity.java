@@ -90,6 +90,7 @@ public class QuizResultActivity extends AppCompatActivity {
             Intent viewIntent = new Intent(QuizResultActivity.this, ViewAnswersActivity.class);
             viewIntent.putExtra("questions", new ArrayList<>(questions));
             viewIntent.putExtra("userAnswers", new HashMap<>(userAnswers));
+            viewIntent.putExtra("isHistory", false);
             startActivity(viewIntent);
         });
 

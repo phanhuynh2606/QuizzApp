@@ -33,6 +33,9 @@ public interface QuizApiService {
     @POST("student/exam/practice-history")
     Call<ApiResponse<PracticeHistory>> savePracticeHistory(@Body PracticeHistory request);
 
+    @GET("student/exam/practice-history/{userId}")
+    Call<ApiResponse<List<PracticeHistory>>> getExamHistory(@Path("userId") String userId);
+
 //    @GET("quizzes/seme/{authorId}")
 //    Call<ApiResponse<List<Quiz>>> getQuizzesByAuthor(@Path("authorId") String authorId);
 }

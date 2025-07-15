@@ -3,6 +3,8 @@ package com.example.quizzapp.models;
 import androidx.room.Entity;
 import androidx.room.PrimaryKey;
 
+import com.google.gson.annotations.SerializedName;
+
 import java.io.Serializable;
 import java.util.List;
 
@@ -19,6 +21,7 @@ public class Question implements Serializable {
     private String quizId; // Foreign key tới Quiz (MongoDB ObjectId)
     private String questionText;
     private List<Option> options;
+
     private CorrectAnswer correctAnswer;
     private String explanation;
     private int points;
