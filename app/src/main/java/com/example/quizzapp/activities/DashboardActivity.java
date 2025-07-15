@@ -1,6 +1,7 @@
 package com.example.quizzapp.activities;
 
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -12,13 +13,22 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 
 import com.example.quizzapp.R;
+import com.example.quizzapp.api.ApiClient;
+import com.example.quizzapp.api.AuthApiService;
 import com.example.quizzapp.models.User;
+import com.example.quizzapp.models.api.ApiResponse;
+import com.example.quizzapp.models.api.ProfileResponse;
 import com.example.quizzapp.repository.AuthRepository;
 import com.example.quizzapp.repository.QuizRepository;
+import com.example.quizzapp.utils.TokenManager;
+
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
 
 public class DashboardActivity extends AppCompatActivity {
-    private TextView tvWelcome, tvTotalQuizzes, tvAverageScore;
-    private Button btnTakeQuiz, btnViewHistory, btnSyncData;
+    private TextView tvWelcome, tvTotalQuizzesNumber, tvAverageScoreNumber;
+    private Button btnTakeQuiz, btnViewHistory;
     private AuthRepository authRepository; // Đổi thành AuthRepository cho user management
     private QuizRepository quizRepository; // Thêm QuizRepository cho quiz operations
     private User currentUser;
@@ -38,11 +48,11 @@ public class DashboardActivity extends AppCompatActivity {
 
     private void initViews() {
         tvWelcome = findViewById(R.id.tvWelcome);
-        tvTotalQuizzes = findViewById(R.id.tvTotalQuizzes);
-        tvAverageScore = findViewById(R.id.tvAverageScore);
+        tvTotalQuizzesNumber = findViewById(R.id.tvTotalQuizzesNumber);
+        tvAverageScoreNumber = findViewById(R.id.tvAverageScoreNumber);
         btnTakeQuiz = findViewById(R.id.btnTakeQuiz);
         btnViewHistory = findViewById(R.id.btnViewHistory);
-        btnSyncData = findViewById(R.id.btnSyncData);
+        // Removed btnSyncData as it's no longer in the layout
     }
 
     private void setupToolbar() {
@@ -54,18 +64,155 @@ public class DashboardActivity extends AppCompatActivity {
     }
 
     private void loadUserData() {
+        // Gọi API /me để lấy thông tin user từ server
+        fetchUserFromApi();
+
+        // Fallback: load từ local database nếu API fail
+        authRepository.getCurrentUser(new AuthRepository.UserCallback() {
+            @Override
+            public void onResult(User user) {
+                if (user != null && currentUser == null) {
+                    currentUser = user;
+                    runOnUiThread(() -> {
+                        tvWelcome.setText("Welcome, " + user.getFullName());
+                        loadStatistics();
+                    });
+                }
+            }
+        });
+    }
+
+    private void fetchUserFromApi() {
+        // Lấy token từ TokenManager thay vì SharedPreferences trực tiếp
+        AuthApiService authApiService = ApiClient.getAuthApiService(this);
+
+        // Không cần lấy token thủ công vì TokenInterceptor sẽ tự động thêm
+        Call<ApiResponse<ProfileResponse>> call = authApiService.getProfile();
+
+        call.enqueue(new Callback<ApiResponse<ProfileResponse>>() {
+            @Override
+            public void onResponse(Call<ApiResponse<ProfileResponse>> call, Response<ApiResponse<ProfileResponse>> response) {
+                if (response.isSuccessful() && response.body() != null) {
+                    ApiResponse<ProfileResponse> apiResponse = response.body();
+
+                    if (apiResponse.isSuccess() && apiResponse.getData() != null) {
+                        ProfileResponse profileResponse = apiResponse.getData();
+
+                        // Convert ProfileResponse.user to User object
+                        User userFromApi = convertProfileToUser(profileResponse.getUser());
+                        currentUser = userFromApi;
+
+                        // Lưu thông tin user vào database local
+                        saveUserToLocalDatabase(userFromApi);
+
+                        runOnUiThread(() -> {
+                            updateUI(userFromApi);
+                            Toast.makeText(DashboardActivity.this, "User data synced successfully", Toast.LENGTH_SHORT).show();
+                        });
+                    } else {
+                        runOnUiThread(() -> {
+                            Toast.makeText(DashboardActivity.this, "Failed to get user data", Toast.LENGTH_SHORT).show();
+                            loadLocalUserData();
+                        });
+                    }
+                } else {
+                    runOnUiThread(() -> {
+                        if (response.code() == 401) {
+                            // Token expired hoặc invalid - CLEAR TOKEN trước khi navigate
+                            Toast.makeText(DashboardActivity.this, "Session expired. Please login again.", Toast.LENGTH_LONG).show();
+
+                            // Clear tokens để tránh loop vô hạn
+                            clearTokensAndNavigateToLogin();
+                        } else {
+                            Toast.makeText(DashboardActivity.this, "Failed to fetch user data from server: " + response.code(), Toast.LENGTH_SHORT).show();
+                            // Load từ local database as fallback
+                            loadLocalUserData();
+                        }
+                    });
+                }
+            }
+
+            @Override
+            public void onFailure(Call<ApiResponse<ProfileResponse>> call, Throwable t) {
+                runOnUiThread(() -> {
+                    Toast.makeText(DashboardActivity.this, "Network error: " + t.getMessage(), Toast.LENGTH_SHORT).show();
+                    // Load từ local database as fallback
+                    loadLocalUserData();
+                });
+            }
+        });
+    }
+
+    private User convertProfileToUser(ProfileResponse.UserProfile userProfile) {
+        User user = new User();
+        user.setId(userProfile.getId() != null ? userProfile.getId() : userProfile.get_id());
+        user.setEmail(userProfile.getEmail());
+        user.setFullName(userProfile.getFullName());
+        user.setRole(userProfile.getRole());
+        user.setLevel(userProfile.getLevel());
+        user.setActive(userProfile.isActive());
+        user.setStatus(userProfile.getStatus());
+        user.setTotalQuizzes(userProfile.getTotalQuizzes());
+        user.setAverageScore(userProfile.getAverageScore());
+        user.setTotalStudyTime(userProfile.getTotalStudyTime());
+        user.setLastLogin(userProfile.getLastLogin());
+        user.setCreatedAt(userProfile.getCreatedAt());
+        user.setUpdatedAt(userProfile.getUpdatedAt());
+        return user;
+    }
+
+    private void updateUI(User user) {
+        tvWelcome.setText("Welcome back, " + user.getFullName() + "!");
+        // Cập nhật statistics từ API data
+        updateStatistics(user);
+    }
+
+    private void updateStatistics(User user) {
+        runOnUiThread(() -> {
+            tvTotalQuizzesNumber.setText(String.valueOf(user.getTotalQuizzes()));
+
+            if (user.getAverageScore() > 0) {
+                tvAverageScoreNumber.setText(String.format("%.1f%%", user.getAverageScore()));
+            } else {
+                tvAverageScoreNumber.setText("0%");
+            }
+        });
+    }
+
+    private void saveUserToLocalDatabase(User user) {
+        // Sử dụng AuthRepository để lưu user vào database
+        new Thread(() -> {
+            authRepository.saveUser(user, new AuthRepository.AuthCallback() {
+                @Override
+                public void onSuccess(User savedUser) {
+                    runOnUiThread(() -> {
+                        // User đã được lưu thành công vào local database
+                    });
+                }
+
+                @Override
+                public void onError(String error) {
+                    runOnUiThread(() -> {
+                        Toast.makeText(DashboardActivity.this, "Failed to save user data locally: " + error, Toast.LENGTH_SHORT).show();
+                    });
+                }
+            });
+        }).start();
+    }
+
+    private void loadLocalUserData() {
         authRepository.getCurrentUser(new AuthRepository.UserCallback() {
             @Override
             public void onResult(User user) {
                 if (user != null) {
                     currentUser = user;
                     runOnUiThread(() -> {
-                        tvWelcome.setText("Welcome, " + user.getFullName());
-                        loadStatistics();
+                        tvWelcome.setText("Welcome, " + user.getFullName() + " (Offline)");
+                        updateStatistics(user); // Gọi updateStatistics thay vì loadStatistics
                     });
                 } else {
                     runOnUiThread(() -> {
-                        Toast.makeText(DashboardActivity.this, "No user logged in", Toast.LENGTH_SHORT).show();
+                        Toast.makeText(DashboardActivity.this, "No user data available", Toast.LENGTH_SHORT).show();
                         navigateToLogin();
                     });
                 }
@@ -76,14 +223,10 @@ public class DashboardActivity extends AppCompatActivity {
     private void loadStatistics() {
         if (currentUser == null) return;
 
-        // Load user statistics from database
-        new Thread(() -> {
-            // This would be implemented in repository to get user stats
-            runOnUiThread(() -> {
-                tvTotalQuizzes.setText("Total Quizzes: Loading...");
-                tvAverageScore.setText("Average Score: Loading...");
-            });
-        }).start();
+        // Cập nhật UI với dữ liệu hiện tại thay vì hiển thị "Loading..."
+        runOnUiThread(() -> {
+            updateStatistics(currentUser);
+        });
     }
 
     private void setupClickListeners() {
@@ -176,6 +319,31 @@ public class DashboardActivity extends AppCompatActivity {
         intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
         startActivity(intent);
         finish();
+    }
+
+    private void clearTokensAndNavigateToLogin() {
+        // Clear tokens và logout user khỏi database local
+        TokenManager tokenManager = new TokenManager(this);
+        tokenManager.clearTokens();
+
+        // Logout user khỏi database local để đảm bảo không còn session
+        authRepository.logout(new AuthRepository.AuthCallback() {
+            @Override
+            public void onSuccess(User user) {
+                runOnUiThread(() -> {
+                    // Navigate to login
+                    navigateToLogin();
+                });
+            }
+
+            @Override
+            public void onError(String error) {
+                runOnUiThread(() -> {
+                    // Vẫn navigate dù logout failed
+                    navigateToLogin();
+                });
+            }
+        });
     }
 
 }

@@ -2,7 +2,9 @@ package com.example.quizzapp.repository;
 
 import android.content.Context;
 import android.util.Log;
+import android.widget.Toast;
 
+import com.example.quizzapp.activities.LoginActivity;
 import com.example.quizzapp.api.ApiClient;
 import com.example.quizzapp.api.AuthApiService;
 import com.example.quizzapp.database.QuizDatabase;
@@ -26,6 +28,7 @@ import java.util.concurrent.Executors;
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
+import com.google.gson.Gson;
 
 /**
  * Repository chuyên xử lý Authentication (Đăng nhập, Đăng ký, Đăng xuất)
@@ -38,6 +41,7 @@ public class AuthRepository {
     private UserDao userDao;
     private ExecutorService executor;
     private TokenManager tokenManager; // Thêm TokenManager
+    private Gson gson; // Thêm Gson để parse error response
 
     public AuthRepository(Context context) {
         database = QuizDatabase.getInstance(context);
@@ -45,6 +49,65 @@ public class AuthRepository {
         userDao = database.userDao();
         executor = Executors.newSingleThreadExecutor();
         tokenManager = new TokenManager(context);
+        gson = new Gson(); // Khởi tạo Gson
+    }
+
+    /**
+     * Parse error message từ response body hoặc error body
+     */
+    private String parseErrorMessage(Response<?> response) {
+        String message = "Unknown error occurred";
+
+        try {
+            // Kiểm tra response body trước (cho trường hợp server trả về 200 nhưng success = false)
+            if (response.body() != null && response.body() instanceof ApiResponse) {
+                ApiResponse<?> apiResponse = (ApiResponse<?>) response.body();
+                if (!apiResponse.isSuccess() && apiResponse.getMessage() != null) {
+                    message = apiResponse.getMessage();
+                    Log.d(TAG, "Error from response body: " + message);
+                    return message;
+                }
+            }
+
+            // Kiểm tra error body (cho trường hợp HTTP error status)
+            if (response.errorBody() != null) {
+                String errorBodyString = response.errorBody().string();
+                Log.e(TAG, "Error response body: " + errorBodyString);
+
+                // Parse JSON error response
+                ApiResponse<?> errorResponse = gson.fromJson(errorBodyString, ApiResponse.class);
+                if (errorResponse != null && errorResponse.getMessage() != null) {
+                    message = errorResponse.getMessage();
+                } else {
+                    // Fallback: sử dụng raw error body nếu không parse được
+                    message = errorBodyString;
+                }
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "Error parsing error message: " + e.getMessage());
+            // Fallback based on HTTP status code
+            switch (response.code()) {
+                case 400:
+                    message = "Bad request - please check your input";
+                    break;
+                case 401:
+                    message = "Invalid credentials";
+                    break;
+                case 403:
+                    message = "Access denied";
+                    break;
+                case 404:
+                    message = "Service not found";
+                    break;
+                case 500:
+                    message = "Server error - please try again later";
+                    break;
+                default:
+                    message = "Network error (Code: " + response.code() + ")";
+            }
+        }
+
+        return message;
     }
 
     /**
@@ -78,16 +141,6 @@ public class AuthRepository {
                 Log.d(TAG, "onResponse: "+ response.toString());
                 Log.d(TAG, "Response code: " + response.code());
 
-                // Log response body để debug
-                if (response.errorBody() != null) {
-                    try {
-                        String errorBody = response.errorBody().string();
-                        Log.e(TAG, "Error response body: " + errorBody);
-                    } catch (Exception e) {
-                        Log.e(TAG, "Error reading error body: " + e.getMessage());
-                    }
-                }
-
                 if (response.isSuccessful() && response.body() != null && response.body().isSuccess()) {
                     LoginResponse loginResponse = response.body().getData();
                     User user = loginResponse.getUser();
@@ -111,8 +164,8 @@ public class AuthRepository {
                     Log.d(TAG, "Login successful for user: " + user.getEmail());
                     callback.onSuccess(user);
                 } else {
-                    // Xử lý lỗi từ server
-                    String message = response.body() != null ? response.body().getMessage() : "Login failed";
+                    // Parse error message từ API response
+                    String message = parseErrorMessage(response);
 
                     // Kiểm tra loại lỗi để quyết định có thử offline không
                     boolean shouldTryOffline = false;
@@ -120,22 +173,17 @@ public class AuthRepository {
                     if (response.code() >= 500) {
                         // Server error (5xx) - có thể thử offline
                         shouldTryOffline = true;
-                        message = "Server temporarily unavailable";
-                    } else if (response.code() == 401 || response.code() == 403) {
-                        // Unauthorized/Forbidden - không thử offline vì credentials sai
-                        message = "Invalid email or password";
-                        shouldTryOffline = false;
-                    } else if (response.body() != null && response.body().getMessage() != null) {
-                        // Lấy message từ server response
-                        message = response.body().getMessage();
-
-                        // Kiểm tra message để quyết định có thử offline không
-                        String serverMessage = message.toLowerCase();
-                        if (serverMessage.contains("invalid credentials") ||
-                            serverMessage.contains("incorrect") ||
-                            serverMessage.contains("wrong password") ||
-                            serverMessage.contains("user not found")) {
-                            // Lỗi credentials - không thử offline
+                    } else {
+                        // Client error (4xx) - kiểm tra message để quyết định
+                        String lowerMessage = message.toLowerCase();
+                        if (lowerMessage.contains("invalid credentials") ||
+                            lowerMessage.contains("incorrect") ||
+                            lowerMessage.contains("wrong password") ||
+                            lowerMessage.contains("user not found") ||
+                            lowerMessage.contains("deactivated") ||
+                            lowerMessage.contains("suspended") ||
+                            lowerMessage.contains("banned")) {
+                            // Lỗi account/credentials - không thử offline
                             shouldTryOffline = false;
                         } else {
                             // Lỗi khác - có thể thử offline
@@ -156,7 +204,6 @@ public class AuthRepository {
             @Override
             public void onFailure(Call<ApiResponse<LoginResponse>> call, Throwable t) {
                 Log.e(TAG, "Login API call failed: " + t.getMessage());
-
                 // Thử đăng nhập offline khi không có internet
                 tryOfflineLogin(loginInput, password, callback, "No internet connection");
             }
@@ -260,9 +307,36 @@ public class AuthRepository {
         user.setSalt(hashedPassword.getSalt());
 
         user.setLoggedIn(true);
-        user.setCreatedAt(System.currentTimeMillis());
+        // Sửa: setLocalCreatedAt nhận long, không phải setCreatedAt nhận String
+        user.setLocalCreatedAt(System.currentTimeMillis());
 
         return user;
+    }
+
+    /**
+     * Lưu thông tin user vào database local (public method)
+     * @param user User object cần lưu
+     * @param callback Callback trả kết quả
+     */
+    public void saveUser(User user, AuthCallback callback) {
+        executor.execute(() -> {
+            try {
+                // Xóa tất cả user cũ để đảm bảo chỉ có user hiện tại trong DB
+                userDao.deleteAll();
+
+                // Đặt trạng thái đăng nhập cho user mới
+                user.setLoggedIn(true);
+
+                // Lưu user mới vào DB
+                userDao.insertUser(user);
+
+                Log.d(TAG, "User saved to local database: " + user.getId());
+                callback.onSuccess(user);
+            } catch (Exception e) {
+                Log.e(TAG, "Error saving user to local database: " + e.getMessage());
+                callback.onError("Failed to save user: " + e.getMessage());
+            }
+        });
     }
 
     /**
@@ -359,7 +433,7 @@ public class AuthRepository {
         Log.d(TAG, "Sending change password request");
 
         // TokenInterceptor sẽ tự động thêm Authorization header và xử lý refresh token
-        authApiService.changePassword("", request).enqueue(new Callback<ApiResponse<Void>>() {
+        authApiService.changePassword(request).enqueue(new Callback<ApiResponse<Void>>() {
             @Override
             public void onResponse(Call<ApiResponse<Void>> call, Response<ApiResponse<Void>> response) {
                 Log.d(TAG, "Change password response code: " + response.code());

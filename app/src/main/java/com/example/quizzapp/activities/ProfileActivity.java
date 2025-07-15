@@ -116,8 +116,8 @@ public class ProfileActivity extends AppCompatActivity {
         tvDeviceType.setText(capitalizeFirst(user.getDeviceType()));
 
         // Format và hiển thị dates
-        if (user.getServerCreatedAt() != null) {
-            tvCreatedAt.setText(formatDate(user.getServerCreatedAt()));
+        if (user.getCreatedAt() != null) {
+            tvCreatedAt.setText(formatDate(user.getCreatedAt()));
         } else {
             tvCreatedAt.setText("N/A");
         }

@@ -5,13 +5,14 @@ import com.example.quizzapp.models.api.ApiResponse;
 import com.example.quizzapp.models.api.ChangePasswordRequest;
 import com.example.quizzapp.models.api.LoginRequest;
 import com.example.quizzapp.models.api.LoginResponse;
+import com.example.quizzapp.models.api.ProfileResponse;
 import com.example.quizzapp.models.api.RegisterRequest;
 import com.example.quizzapp.models.api.RegisterResponse;
 import com.example.quizzapp.models.api.RefreshTokenRequest;
 
 import retrofit2.Call;
 import retrofit2.http.Body;
-import retrofit2.http.Header;
+import retrofit2.http.GET;
 import retrofit2.http.POST;
 import retrofit2.http.PUT;
 
@@ -19,6 +20,9 @@ import retrofit2.http.PUT;
  * API Service chuyên xử lý Authentication
  */
 public interface AuthApiService {
+
+    @GET("auth/profile")
+    Call<ApiResponse<ProfileResponse>> getProfile();
 
     @POST("auth/login")
     Call<ApiResponse<LoginResponse>> login(@Body LoginRequest loginRequest);
@@ -28,7 +32,6 @@ public interface AuthApiService {
 
     @PUT("auth/change-password")
     Call<ApiResponse<Void>> changePassword(
-        @Header("Authorization") String authorization,
         @Body ChangePasswordRequest changePasswordRequest
     );
 
@@ -36,5 +39,5 @@ public interface AuthApiService {
     Call<ApiResponse<LoginResponse>> refreshToken(@Body RefreshTokenRequest refreshTokenRequest);
 
     @POST("auth/logout")
-    Call<ApiResponse<Void>> logout(@Header("Authorization") String authorization);
+    Call<ApiResponse<Void>> logout();
 }
