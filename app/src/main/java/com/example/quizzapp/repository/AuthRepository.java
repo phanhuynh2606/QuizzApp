@@ -371,6 +371,9 @@ public class AuthRepository {
                 // Đăng xuất tất cả user trong database local
                 userDao.logoutAllUsers();
 
+                // Clear stored tokens
+                tokenManager.clearTokens();
+
                 Log.d(TAG, "User logged out successfully");
                 callback.onSuccess(null);
             } catch (Exception e) {

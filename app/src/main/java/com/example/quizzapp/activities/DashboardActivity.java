@@ -32,6 +32,7 @@ public class DashboardActivity extends AppCompatActivity {
     private AuthRepository authRepository; // Đổi thành AuthRepository cho user management
     private QuizRepository quizRepository; // Thêm QuizRepository cho quiz operations
     private User currentUser;
+    private boolean isFirstLoad = true; // Flag để tránh gọi API liên tục
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -44,6 +45,16 @@ public class DashboardActivity extends AppCompatActivity {
         setupToolbar();
         loadUserData();
         setupClickListeners();
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        // Chỉ refresh data nếu không phải lần đầu load (đã load trong onCreate)
+        if (!isFirstLoad) {
+            refreshUserData();
+        }
+        isFirstLoad = false;
     }
 
     private void initViews() {
@@ -346,4 +357,55 @@ public class DashboardActivity extends AppCompatActivity {
         });
     }
 
+    private void refreshUserData() {
+        // Gọi lại API để làm mới dữ liệu user (không hiển thị toast success)
+        fetchUserFromApiSilently();
+    }
+
+    private void fetchUserFromApiSilently() {
+        AuthApiService authApiService = ApiClient.getAuthApiService(this);
+        Call<ApiResponse<ProfileResponse>> call = authApiService.getProfile();
+
+        call.enqueue(new Callback<ApiResponse<ProfileResponse>>() {
+            @Override
+            public void onResponse(Call<ApiResponse<ProfileResponse>> call, Response<ApiResponse<ProfileResponse>> response) {
+                if (response.isSuccessful() && response.body() != null) {
+                    ApiResponse<ProfileResponse> apiResponse = response.body();
+
+                    if (apiResponse.isSuccess() && apiResponse.getData() != null) {
+                        ProfileResponse profileResponse = apiResponse.getData();
+                        User userFromApi = convertProfileToUser(profileResponse.getUser());
+                        currentUser = userFromApi;
+
+                        // Lưu vào database local
+                        saveUserToLocalDatabase(userFromApi);
+
+                        runOnUiThread(() -> {
+                            updateUI(userFromApi);
+                            // Không hiển thị toast khi refresh tự động
+                        });
+                    } else {
+                        // Fallback to local data nếu API fails
+                        loadLocalUserData();
+                    }
+                } else {
+                    if (response.code() == 401) {
+                        runOnUiThread(() -> {
+                            Toast.makeText(DashboardActivity.this, "Session expired. Please login again.", Toast.LENGTH_LONG).show();
+                            clearTokensAndNavigateToLogin();
+                        });
+                    } else {
+                        // Fallback to local data
+                        loadLocalUserData();
+                    }
+                }
+            }
+
+            @Override
+            public void onFailure(Call<ApiResponse<ProfileResponse>> call, Throwable t) {
+                // Silent failure - fallback to local data
+                loadLocalUserData();
+            }
+        });
+    }
 }

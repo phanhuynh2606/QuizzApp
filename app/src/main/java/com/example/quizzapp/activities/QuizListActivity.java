@@ -60,7 +60,7 @@ public class QuizListActivity extends AppCompatActivity {
     private void loadQuizzes() {
         subjectId = getIntent().getStringExtra("subject_id");
         if (subjectId == null) {
-            Toast.makeText(this, "Subject ID not found", Toast.LENGTH_SHORT).show();
+//            Toast.makeText(this, "Subject ID not found", Toast.LENGTH_SHORT).show();
             finish();
             return;
         }

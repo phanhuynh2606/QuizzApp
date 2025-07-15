@@ -10,7 +10,7 @@ public class Constants {
 
     // Database Configuration
     public static final String DATABASE_NAME = "quiz_database";
-    public static final int DATABASE_VERSION = 2; // Tăng từ 1 lên 2 vì đã thêm nhiều field mới vào User model
+    public static final int DATABASE_VERSION = 1; // Tăng từ 1 lên 2 vì đã thêm nhiều field mới vào User model
 
     // SharedPreferences Keys
     public static final String PREF_AUTH_TOKENS = "auth_tokens";

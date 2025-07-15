@@ -94,9 +94,9 @@ public class LoginActivity extends AppCompatActivity {
 
             @Override
             public void onError(String error) {
-                Toast.makeText(LoginActivity.this, error, Toast.LENGTH_LONG).show();
                 runOnUiThread(() -> {
                     showLoading(false);
+                    Toast.makeText(LoginActivity.this, error, Toast.LENGTH_LONG).show();
                     showError(error);
                 });
             }

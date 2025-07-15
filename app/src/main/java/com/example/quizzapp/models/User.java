@@ -12,9 +12,6 @@ public class User {
     @SerializedName("_id") // Ánh xạ từ _id trong JSON sang id trong model
     private String id = ""; // Khởi tạo mặc định để tránh null
 
-    @SerializedName("username")
-    private String username;
-
     @SerializedName("email")
     private String email;
 
@@ -84,8 +81,6 @@ public class User {
     public String getId() { return id; }
     public void setId(String id) { this.id = id != null ? id : ""; }
 
-    public String getUsername() { return username; }
-    public void setUsername(String username) { this.username = username; }
 
     public String getEmail() { return email; }
     public void setEmail(String email) { this.email = email; }
