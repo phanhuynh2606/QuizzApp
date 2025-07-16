@@ -42,7 +42,6 @@ import java.util.Map;
 
 public class QuizTakeActivity extends AppCompatActivity {
     private static final String TAG = "QuizTakeActivity";
-    private static final long QUIZ_DURATION = 15 * 60 * 1000; // 15 phút
     private static final long AUTO_SAVE_INTERVAL = 10 * 1000;
     private static final long NETWORK_CHECK_INTERVAL = 5 * 1000;
 
@@ -80,7 +79,9 @@ public class QuizTakeActivity extends AppCompatActivity {
     private CountDownTimer countDownTimer;
     private Handler autoSaveHandler;
     private Handler networkCheckHandler;
-    private long timeLeftInMillis = QUIZ_DURATION;
+
+    private long quiz_duration;
+    private long timeLeftInMillis;
 
     // State management
     private boolean isQuizCompleted = false;
@@ -168,6 +169,9 @@ public class QuizTakeActivity extends AppCompatActivity {
         subjectCode = intent.getStringExtra("subject_code");
         quizTitle = intent.getStringExtra("quiz_title");
         examTypeCode = intent.getStringExtra("examType");
+        quiz_duration = intent.getIntExtra("duration", 10) * 60 * 1000;
+        timeLeftInMillis = quiz_duration;
+
         quizId = generateStateId();
 
         if (subjectCode == null) {
@@ -612,7 +616,7 @@ public class QuizTakeActivity extends AppCompatActivity {
         }
 
         double score = questions.size() > 0 ? (double) correctAnswers / questions.size() * 100 : 0;
-        long durationInMillis = QUIZ_DURATION - timeLeftInMillis;
+        long durationInMillis = quiz_duration - timeLeftInMillis;
 
         Intent resultIntent = new Intent(this, QuizResultActivity.class);
         resultIntent.putExtra("score", score);

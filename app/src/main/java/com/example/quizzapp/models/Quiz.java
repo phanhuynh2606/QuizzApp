@@ -23,6 +23,7 @@ public class Quiz {
     private String subjectCode;
     private int totalQuestions;
     private int timeLimit;
+    private long duration;
 
     @SerializedName("examTypeId")
     private ExamType examType;
@@ -46,6 +47,19 @@ public class Quiz {
         this.isActive = true;
     }
 
+    public Quiz(boolean isActive, Date createdAt, ExamType examType, long duration, int timeLimit, int totalQuestions, String subjectCode, String description, String title, String examCode, @NonNull String id) {
+        this.isActive = isActive;
+        this.createdAt = createdAt;
+        this.examType = examType;
+        this.duration = duration;
+        this.timeLimit = timeLimit;
+        this.totalQuestions = totalQuestions;
+        this.subjectCode = subjectCode;
+        this.description = description;
+        this.title = title;
+        this.examCode = examCode;
+        this.id = id;
+    }
     // Getters and setters
 
     public String getExamCode() { return examCode; }
@@ -76,6 +90,14 @@ public class Quiz {
 
     public boolean isActive() { return isActive; }
     public void setActive(boolean active) { isActive = active; }
+
+    public long getDuration() {
+        return duration;
+    }
+
+    public void setDuration(long duration) {
+        this.duration = duration;
+    }
 }
 
 

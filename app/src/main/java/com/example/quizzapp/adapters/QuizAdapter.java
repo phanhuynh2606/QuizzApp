@@ -47,7 +47,7 @@ public class QuizAdapter extends RecyclerView.Adapter<QuizAdapter.QuizViewHolder
     }
 
     static class QuizViewHolder extends RecyclerView.ViewHolder {
-        private TextView tvTitle, tvDescription, tvSubject, tvQuestions, tvExamType;
+        private TextView tvTitle, tvDescription, tvSubject, tvQuestions, tvExamType, tvDuration;
         private Button btnStartQuiz;
 
         public QuizViewHolder(@NonNull View itemView) {
@@ -58,6 +58,8 @@ public class QuizAdapter extends RecyclerView.Adapter<QuizAdapter.QuizViewHolder
             tvQuestions = itemView.findViewById(R.id.tvQuestionCount);
             tvExamType = itemView.findViewById(R.id.tvExamLevel);
             btnStartQuiz = itemView.findViewById(R.id.btnStartQuiz);
+            tvDuration = itemView.findViewById(R.id.tvDuration);
+
         }
 
         public void bind(Quiz quiz, OnQuizClickListener listener) {
@@ -65,6 +67,7 @@ public class QuizAdapter extends RecyclerView.Adapter<QuizAdapter.QuizViewHolder
             tvDescription.setText(quiz.getDescription());
             tvSubject.setText(quiz.getSubjectCode());
             tvQuestions.setText(quiz.getTotalQuestions() + " questions");
+            tvDuration.setText(quiz.getDuration() + " minutes");
             Log.d("QuizAdapter", "ExamType = " + quiz.getExamType());
             if (quiz.getExamType() != null) {
                 tvExamType.setText(quiz.getExamType().getTypeName());
